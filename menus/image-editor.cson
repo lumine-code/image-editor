@@ -74,6 +74,9 @@
     {label: 'Undo', command: 'image-editor:undo'}
     {label: 'Redo', command: 'image-editor:redo'}
     {type: 'separator'}
+    {label: 'Copy Path', command: 'image-editor:copy-path'}
+    {label: 'Copy Project Path', command: 'image-editor:copy-project-path'}
+    {type: 'separator'}
     {label: 'Save', command: 'core:save'}
     {label: 'Save As...', command: 'core:save-as'}
     {type: 'separator'}

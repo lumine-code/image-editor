@@ -70,6 +70,8 @@ Commands available in `.image-editor`:
 - `image-editor:auto-select-with-border`: auto-select with border padding,
 - `image-editor:select-visible-area`: select visible portion,
 - `image-editor:copy-selection`: copy selection to clipboard,
+- `image-editor:copy-path`: copy absolute image path to clipboard,
+- `image-editor:copy-project-path`: copy project-relative image path to clipboard,
 - `image-editor:crop-to-selection`: crop to selection,
 - `image-editor:hide-selection`: clear selection,
 - `image-editor:show-properties`: view file and image info,
