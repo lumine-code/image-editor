@@ -1,6 +1,8 @@
 # image-editor
 
-View and edit images directly in Lumine. A feature-rich image viewer with support for cropping, rotation, color adjustments, filters, and more.
+View and edit images directly in the editor.
+
+A feature-rich image viewer with support for cropping, rotation, color adjustments, filters, and more.
 
 ## Features
 

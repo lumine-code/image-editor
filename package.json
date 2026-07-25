@@ -1,7 +1,7 @@
 {
   "name": "image-editor",
   "author": "lumine-code",
-  "description": "View and edit images directly in Lumine",
+  "description": "View and edit images directly in the editor.",
   "repository": "https://github.com/lumine-code/image-editor",
   "bugs": {
     "url": "https://github.com/lumine-code/image-editor/issues"
