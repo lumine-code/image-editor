@@ -15,7 +15,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 - **SVG support**: view SVG images with automatic viewBox dimension handling (read-only).
 - **Undo/redo**: full history with viewport preservation.
 - **Navigation panel**: browse folder images via [navigation-panel](https://github.com/lumine-code/navigation-panel).
-- **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jove-repl](https://github.com/lumine-code/jove-repl) to display plot outputs.
+- **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jupyter-repl](https://github.com/lumine-code/jupyter-repl) to display plot outputs.
 
 ## Installation
 
@@ -88,7 +88,7 @@ Commands available in `.image-editor`:
 
 ## Image editor API
 
-The `image-editor` service allows other packages to open images directly from data URLs without saving to disk. Used by [jove-repl](https://github.com/lumine-code/jove-repl) to display plot outputs.
+The `image-editor` service allows other packages to open images directly from data URLs without saving to disk. Used by [jupyter-repl](https://github.com/lumine-code/jupyter-repl) to display plot outputs.
 
 In your `package.json`:
 
