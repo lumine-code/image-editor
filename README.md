@@ -1,26 +1,23 @@
 # image-editor
 
-View and edit images directly in Pulsar. A feature-rich image viewer with support for cropping, rotation, color adjustments, filters, and more.
-
-![view](https://github.com/asiloisad/pulsar-image-editor/blob/master/assets/view.png?raw=true)
+View and edit images directly in Lumine. A feature-rich image viewer with support for cropping, rotation, color adjustments, filters, and more.
 
 ## Features
 
-- **Zoom & pan**: Zoom controls, keyboard shortcuts, and right-click drag to pan.
-- **Image browsing**: Navigate between images in the same folder.
-- **Transform tools**: Rotate, flip, resize, and crop images.
-- **Color adjustments**: Brightness, contrast, saturation, hue, and auto-adjust.
-- **Filters**: Blur, sharpen, grayscale, sepia, posterize, and invert.
-- **Selection tools**: Create, resize, auto-select, and crop to selection.
-- **SVG support**: View SVG images with automatic viewBox dimension handling (read-only).
-- **Pending tab toggle**: Toggle the pending state of the editor tab.
-- **Undo/redo**: Full history with viewport preservation.
-- **Navigation panel**: Browse folder images via [navigation-panel](https://github.com/asiloisad/pulsar-navigation-panel).
-- **API for packages**: Other packages can open images from data URLs without saving to disk. Used by [hydrogen-next](https://github.com/asiloisad/pulsar-hydrogen-next) to display plot outputs.
+- **Zoom & pan**: zoom controls, keyboard shortcuts, and right-click drag to pan.
+- **Image browsing**: navigate between images in the same folder.
+- **Transform tools**: rotate, flip, resize, and crop images.
+- **Color adjustments**: brightness, contrast, saturation, hue, and auto-adjust.
+- **Filters**: blur, sharpen, grayscale, sepia, posterize, and invert.
+- **Selection tools**: create, resize, auto-select, and crop to selection.
+- **SVG support**: view SVG images with automatic viewBox dimension handling (read-only).
+- **Undo/redo**: full history with viewport preservation.
+- **Navigation panel**: browse folder images via [navigation-panel](https://github.com/lumine-code/navigation-panel).
+- **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jove-repl](https://github.com/lumine-code/jove-repl) to display plot outputs.
 
 ## Installation
 
-To install `image-editor` search for [image-editor](https://web.pulsar-edit.dev/packages/image-editor) in the Install pane of the Pulsar settings or run `ppm install image-editor`. Alternatively, you can run `ppm install asiloisad/pulsar-image-editor` to install a package directly from the GitHub repository.
+To install `image-editor` search for _image-editor_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/image-editor`.
 
 ## Commands
 
@@ -81,42 +78,15 @@ Commands available in `.image-editor`:
 
 ## Mouse controls
 
-- **Left-click drag**: Create selection.
-- **Double left-click**: Zoom to fit, or zoom to selection when double-clicking inside one.
-- **Right-click drag**: Pan image.
-- **Mouse wheel**: Navigate to previous/next image (or zoom if `switchZoomAndNavigation` is disabled).
-- **Ctrl + Mouse wheel**: Zoom in/out at cursor position (or navigate if `switchZoomAndNavigation` is disabled).
+- **Left-click drag**: create selection.
+- **Double left-click**: zoom to fit, or zoom to selection when double-clicking inside one.
+- **Right-click drag**: pan image.
+- **Mouse wheel**: navigate to previous/next image (or zoom if `switchZoomAndNavigation` is disabled).
+- **Ctrl + Mouse wheel**: zoom in/out at cursor position (or navigate if `switchZoomAndNavigation` is disabled).
 
-## Provided Service `navigation-adapter`
+## Image editor API
 
-Exposes the folder image list to [navigation-panel](https://github.com/asiloisad/pulsar-navigation-panel). When an image is open, the panel lists all images in the same folder. Clicking an entry loads that image in the same editor.
-
-In your `package.json`:
-
-```json
-{
-  "consumedServices": {
-    "navigation-adapter": {
-      "versions": {
-        "1.0.0": "consumeNavigationAdapter"
-      }
-    }
-  }
-}
-```
-
-In your main module:
-
-```javascript
-consumeNavigationAdapter(adapter) {
-  // adapter follows the navigation-adapter protocol:
-  // handlesItem(item), observeHeaders(item, callback), navigateTo(item, header)
-}
-```
-
-## Provided Service `image-editor`
-
-Allows other packages to open images directly from data URLs without saving to disk. Used by [hydrogen-next](https://github.com/asiloisad/pulsar-hydrogen-next) to display plot outputs.
+The `image-editor` service allows other packages to open images directly from data URLs without saving to disk. Used by [jove-repl](https://github.com/lumine-code/jove-repl) to display plot outputs.
 
 In your `package.json`:
 
@@ -154,6 +124,14 @@ module.exports = {
 ```
 
 The opened image will be marked as "modified" and prompt the user to save when closing.
+
+## Services
+
+- **image-editor** (`1.0.0`): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
+- **navigation-adapter** (`1.0.0`): provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
+- **status-bar** (`^1.0.0`): consumed to show image dimensions, file size, and mouse position in the status bar.
+- **tree-view** (`^1.0.0`): consumed to read the selected paths for the "Open in Image Editor" context command.
+- **claude-chat** (`^1.0.0`): consumed to attach the current image to a Claude chat conversation.
 
 ## Contributing
 

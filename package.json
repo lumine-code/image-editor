@@ -1,13 +1,42 @@
 {
   "name": "image-editor",
-  "description": "View and edit images directly in Pulsar",
-  "repository": "https://github.com/asiloisad/pulsar-image-editor",
-  "version": "1.2.2",
+  "author": "lumine-code",
+  "description": "View and edit images directly in Lumine",
+  "repository": "https://github.com/lumine-code/image-editor",
+  "bugs": {
+    "url": "https://github.com/lumine-code/image-editor/issues"
+  },
+  "keywords": [
+    "image",
+    "viewer",
+    "editor",
+    "png",
+    "jpg",
+    "svg"
+  ],
+  "version": "2.0.0",
   "license": "MIT",
   "engines": {
-    "atom": "*"
+    "atom": ">=1.100.0 <2.0.0"
   },
   "main": "./lib/main",
+  "scripts": {
+    "test": "cd ../lumine && npm run test:only -- ../image-editor/spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#ace74599f9d6b54e9eb24ecb1e2407e9c35fcc74"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.2.2",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6"
+  },
   "providedServices": {
     "image-editor": {
       "versions": {
@@ -37,16 +66,11 @@
       }
     }
   },
-  "dependencies": {
-    "bytes": "^3.1.2",
-    "etch": "^0.14.1"
-  },
   "deserializers": {
     "ImageEditor": "deserialize"
   },
   "configSchema": {
     "defaultBackgroundColor": {
-      "order": 1,
       "title": "Default Background Color",
       "type": "string",
       "enum": [
@@ -58,64 +82,56 @@
       "default": "native"
     },
     "autoSelectTolerance": {
-      "order": 2,
       "title": "Auto-Select Tolerance",
       "description": "Color difference tolerance for auto-selection (0-255). Lower values require more similar colors to be considered background.",
       "type": "integer",
-      "default": 30,
       "minimum": 0,
-      "maximum": 255
+      "maximum": 255,
+      "default": 30
     },
     "largeImageThreshold": {
-      "order": 3,
       "title": "Large Image Threshold",
       "description": "File size threshold (in MB) for applying optimizations. Images larger than this will use async decoding and compressed history.",
       "type": "number",
-      "default": 2,
       "minimum": 0.5,
-      "maximum": 50
+      "maximum": 50,
+      "default": 2
     },
     "maxHistorySize": {
-      "order": 4,
       "title": "Maximum History Size",
       "description": "Maximum number of undo/redo states to keep (reduced automatically for large images).",
       "type": "integer",
-      "default": 50,
       "minimum": 5,
-      "maximum": 200
+      "maximum": 200,
+      "default": 50
     },
     "wheelNavigationDelay": {
-      "order": 5,
       "title": "Mouse Wheel Navigation Delay",
       "description": "Minimum delay (in milliseconds) between mouse wheel navigation events. Higher values prevent accidental rapid scrolling.",
       "type": "integer",
-      "default": 50,
       "minimum": 10,
-      "maximum": 500
+      "maximum": 500,
+      "default": 50
     },
     "showSuccessMessages": {
-      "order": 6,
       "title": "Show Success Messages",
       "description": "Show success notifications after operations like crop, transform, save, etc.",
       "type": "boolean",
       "default": true
     },
     "switchZoomAndNavigation": {
-      "order": 7,
       "title": "Switch Zoom and Navigation",
       "description": "When enabled, scroll wheel navigates and Ctrl+scroll zooms. When disabled, scroll wheel zooms and Ctrl+scroll navigates.",
       "type": "boolean",
       "default": true
     },
     "autoZoomLimit": {
-      "order": 8,
       "title": "Limit Auto Zoom to 100%",
       "description": "When enabled, auto zoom (fit to viewport) will not scale images beyond 100%. When disabled, small images will be scaled up to fit the viewport.",
       "type": "boolean",
       "default": true
     },
     "scrollCycle": {
-      "order": 9,
       "title": "Cycle Through Images",
       "description": "When enabled, navigating past the last image wraps to the first image (and vice versa). When disabled, navigation stops at the boundaries.",
       "type": "boolean",
