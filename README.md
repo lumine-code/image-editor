@@ -95,7 +95,7 @@ In your `package.json`:
   "consumedServices": {
     "image-editor": {
       "versions": {
-        "1.0.0": "consumeImageEditor"
+        "^1.0.0": "consumeImageEditor"
       }
     }
   }
