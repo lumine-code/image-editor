@@ -132,7 +132,7 @@ The opened image will be marked as "modified" and prompt the user to save when c
 - **image-editor** (`1.0.0`): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
 - **navigation.adapter** (`1.0.0`): provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
 - **status-bar** (`^1.0.0`): consumed to show image dimensions, file size, and mouse position in the status bar.
-- **tree-view** (`^1.0.0`): consumed to read the selected paths for the "Open in Image Editor" context command.
+- **tree-view.selection** (`^1.0.0`): consumed to read the selected paths for the "Open in Image Editor" context command.
 - **claude-chat** (`^1.0.0`): consumed to attach the current image to a Claude chat conversation.
 
 ## Contributing
