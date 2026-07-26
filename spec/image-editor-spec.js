@@ -92,7 +92,7 @@ describe("image-editor", () => {
     });
   });
 
-  describe("provided navigation-adapter service", () => {
+  describe("provided navigation.adapter service", () => {
     it("handles only ImageEditor items and lists folder images", async () => {
       const adapter = mainModule.provideNavigationAdapter();
       expect(typeof adapter.handlesItem).toBe("function");
