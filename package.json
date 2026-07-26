@@ -44,7 +44,7 @@
         "1.0.0": "provideImageEditor"
       }
     },
-    "navigation-adapter": {
+    "navigation.adapter": {
       "versions": {
         "1.0.0": "provideNavigationAdapter"
       }
