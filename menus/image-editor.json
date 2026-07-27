@@ -1,6 +1,6 @@
 {
   "context-menu": {
-    ".tree-view .file .name[data-path$=\".svg\"]": [
+    ".tree-view .file[data-path$=\".svg\"]": [
       { "label": "Open in Image Editor", "command": "image-editor:open-in-new-tab" }
     ],
     "atom-text-editor[data-grammar=\"text html svg\"]": [
