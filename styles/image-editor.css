@@ -223,16 +223,16 @@
 
   [background="white"] {
     background-color: white;
-    background-image: url("atom://image-editor/assets/transparent.png");
+    background-image: url("lumine://image-editor/assets/transparent.png");
   }
 
   [background="black"] {
     background-color: black;
-    background-image: url("atom://image-editor/assets/transparent.png");
+    background-image: url("lumine://image-editor/assets/transparent.png");
   }
 
   [background="transparent"] {
-    background-image: url("atom://image-editor/assets/transparent.png");
+    background-image: url("lumine://image-editor/assets/transparent.png");
   }
 }
 
@@ -395,7 +395,7 @@
     border: 1px solid var(--base-border-color);
     border-radius: var(--component-border-radius);
     background-color: white;
-    background-image: url("atom://image-editor/assets/transparent.png");
+    background-image: url("lumine://image-editor/assets/transparent.png");
 
     canvas {
       display: block;
