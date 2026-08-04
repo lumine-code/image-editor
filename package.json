@@ -31,7 +31,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#ace74599f9d6b54e9eb24ecb1e2407e9c35fcc74"
+    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#9c74208ad932e0694cb3f7ad575e7205154dea8f"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
