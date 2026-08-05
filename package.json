@@ -24,6 +24,15 @@
     "In the image editor you can crop the picture to the current selection with {{ 'image-editor:crop-to-selection' | keystroke }}"
   ],
   "main": "./lib/main",
+  "files": [
+    "assets",
+    "docs",
+    "keymaps",
+    "lib",
+    "menus",
+    "spec",
+    "styles"
+  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
