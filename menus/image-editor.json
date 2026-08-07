@@ -31,19 +31,19 @@
         "label": "Transform",
         "submenu": [
           {
-            "label": "Rotate 90\u00b0 Clockwise",
+            "label": "Rotate 90° Clockwise",
             "command": "image-editor:rotate-90-cw"
           },
           {
-            "label": "Rotate 90\u00b0 Counter-clockwise",
+            "label": "Rotate 90° Counter-clockwise",
             "command": "image-editor:rotate-90-ccw"
           },
           {
-            "label": "Rotate 180\u00b0",
+            "label": "Rotate 180°",
             "command": "image-editor:rotate-180"
           },
           {
-            "label": "Rotate by Angle\u2026",
+            "label": "Rotate by Angle…",
             "command": "image-editor:rotate-free"
           },
           {
@@ -70,22 +70,22 @@
             "type": "separator"
           },
           {
-            "label": "Brightness and Contrast\u2026",
+            "label": "Brightness and Contrast…",
             "command": "image-editor:brightness-contrast"
           },
           {
-            "label": "Saturation\u2026",
+            "label": "Saturation…",
             "command": "image-editor:saturation"
           },
           {
-            "label": "Hue Shift\u2026",
+            "label": "Hue Shift…",
             "command": "image-editor:hue-shift"
           },
           {
             "type": "separator"
           },
           {
-            "label": "Grayscale\u2026",
+            "label": "Grayscale…",
             "command": "image-editor:grayscale"
           },
           {
@@ -97,7 +97,7 @@
             "command": "image-editor:sepia"
           },
           {
-            "label": "Posterize\u2026",
+            "label": "Posterize…",
             "command": "image-editor:posterize"
           }
         ]
@@ -106,7 +106,7 @@
         "label": "Filters",
         "submenu": [
           {
-            "label": "Sharpen\u2026",
+            "label": "Sharpen…",
             "command": "image-editor:sharpen"
           },
           {
@@ -125,7 +125,7 @@
             "type": "separator"
           },
           {
-            "label": "Blur\u2026",
+            "label": "Blur…",
             "command": "image-editor:blur"
           },
           {
@@ -221,7 +221,7 @@
         "command": "core:save"
       },
       {
-        "label": "Save As\u2026",
+        "label": "Save As…",
         "command": "core:save-as"
       },
       {
