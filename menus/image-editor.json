@@ -1,86 +1,244 @@
 {
   "context-menu": {
     ".tree-view .file[data-path$=\".svg\"]": [
-      { "label": "Open in Image Editor", "command": "image-editor:open-in-new-tab" }
-    ],
-    "atom-text-editor[data-grammar=\"text html svg\"]": [
-      { "label": "Open in Image Editor", "command": "image-editor:open-in-new-tab" }
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Open in Image Editor",
+        "command": "image-editor:open-in-new-tab"
+      },
+      {
+        "type": "separator"
+      }
     ],
     ".image-editor": [
-      { "label": "Open in New Tab", "command": "image-editor:open-in-new-tab" },
-      { "label": "Reload Image", "command": "image-editor:reload" },
-      { "type": "separator" },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Open in New Tab",
+        "command": "image-editor:open-in-new-tab"
+      },
+      {
+        "label": "Reload Image",
+        "command": "image-editor:reload"
+      },
+      {
+        "type": "separator"
+      },
       {
         "label": "Transform",
         "submenu": [
-          { "label": "Rotate 90° Clockwise", "command": "image-editor:rotate-90-cw" },
-          { "label": "Rotate 90° Counter-clockwise", "command": "image-editor:rotate-90-ccw" },
-          { "label": "Rotate 180°", "command": "image-editor:rotate-180" },
-          { "label": "Rotate by Angle...", "command": "image-editor:rotate-free" },
-          { "type": "separator" },
-          { "label": "Flip Horizontal", "command": "image-editor:flip-horizontal" },
-          { "label": "Flip Vertical", "command": "image-editor:flip-vertical" }
+          {
+            "label": "Rotate 90\u00b0 Clockwise",
+            "command": "image-editor:rotate-90-cw"
+          },
+          {
+            "label": "Rotate 90\u00b0 Counter-clockwise",
+            "command": "image-editor:rotate-90-ccw"
+          },
+          {
+            "label": "Rotate 180\u00b0",
+            "command": "image-editor:rotate-180"
+          },
+          {
+            "label": "Rotate by Angle\u2026",
+            "command": "image-editor:rotate-free"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "label": "Flip Horizontal",
+            "command": "image-editor:flip-horizontal"
+          },
+          {
+            "label": "Flip Vertical",
+            "command": "image-editor:flip-vertical"
+          }
         ]
       },
       {
         "label": "Adjustments",
         "submenu": [
-          { "label": "Auto Adjust Colors", "command": "image-editor:auto-adjust-colors" },
-          { "type": "separator" },
-          { "label": "Brightness & Contrast...", "command": "image-editor:brightness-contrast" },
-          { "label": "Saturation...", "command": "image-editor:saturation" },
-          { "label": "Hue Shift...", "command": "image-editor:hue-shift" },
-          { "type": "separator" },
-          { "label": "Grayscale...", "command": "image-editor:grayscale" },
-          { "label": "Invert Colors", "command": "image-editor:invert-colors" },
-          { "label": "Sepia Tone", "command": "image-editor:sepia" },
-          { "label": "Posterize...", "command": "image-editor:posterize" }
+          {
+            "label": "Auto Adjust Colors",
+            "command": "image-editor:auto-adjust-colors"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "label": "Brightness and Contrast\u2026",
+            "command": "image-editor:brightness-contrast"
+          },
+          {
+            "label": "Saturation\u2026",
+            "command": "image-editor:saturation"
+          },
+          {
+            "label": "Hue Shift\u2026",
+            "command": "image-editor:hue-shift"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "label": "Grayscale\u2026",
+            "command": "image-editor:grayscale"
+          },
+          {
+            "label": "Invert Colors",
+            "command": "image-editor:invert-colors"
+          },
+          {
+            "label": "Sepia Tone",
+            "command": "image-editor:sepia"
+          },
+          {
+            "label": "Posterize\u2026",
+            "command": "image-editor:posterize"
+          }
         ]
       },
       {
         "label": "Filters",
         "submenu": [
-          { "label": "Sharpen...", "command": "image-editor:sharpen" },
-          { "label": "Sharpen (Light)", "command": "image-editor:sharpen-light" },
-          { "label": "Sharpen (Medium)", "command": "image-editor:sharpen-medium" },
-          { "label": "Sharpen (Strong)", "command": "image-editor:sharpen-strong" },
-          { "type": "separator" },
-          { "label": "Blur...", "command": "image-editor:blur" },
-          { "label": "Blur (Light)", "command": "image-editor:blur-light" },
-          { "label": "Blur (Medium)", "command": "image-editor:blur-medium" },
-          { "label": "Blur (Strong)", "command": "image-editor:blur-strong" }
+          {
+            "label": "Sharpen\u2026",
+            "command": "image-editor:sharpen"
+          },
+          {
+            "label": "Sharpen (Light)",
+            "command": "image-editor:sharpen-light"
+          },
+          {
+            "label": "Sharpen (Medium)",
+            "command": "image-editor:sharpen-medium"
+          },
+          {
+            "label": "Sharpen (Strong)",
+            "command": "image-editor:sharpen-strong"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "label": "Blur\u2026",
+            "command": "image-editor:blur"
+          },
+          {
+            "label": "Blur (Light)",
+            "command": "image-editor:blur-light"
+          },
+          {
+            "label": "Blur (Medium)",
+            "command": "image-editor:blur-medium"
+          },
+          {
+            "label": "Blur (Strong)",
+            "command": "image-editor:blur-strong"
+          }
         ]
       },
       {
         "label": "Background",
         "submenu": [
-          { "label": "Native", "command": "image-editor:background-native" },
-          { "label": "White", "command": "image-editor:background-white" },
-          { "label": "Black", "command": "image-editor:background-black" },
-          { "label": "Transparent", "command": "image-editor:background-transparent" }
+          {
+            "label": "Native",
+            "command": "image-editor:background-native"
+          },
+          {
+            "label": "White",
+            "command": "image-editor:background-white"
+          },
+          {
+            "label": "Black",
+            "command": "image-editor:background-black"
+          },
+          {
+            "label": "Transparent",
+            "command": "image-editor:background-transparent"
+          }
         ]
       },
-      { "type": "separator" },
+      {
+        "type": "separator"
+      },
       {
         "label": "Selection",
         "submenu": [
-          { "label": "Auto Select", "command": "image-editor:auto-select" },
-          { "label": "Select All", "command": "image-editor:select-all" },
-          { "label": "Copy to Clipboard", "command": "image-editor:copy-selection" },
-          { "label": "Crop to Selection", "command": "image-editor:crop-to-selection" },
-          { "label": "Zoom to Selection", "command": "image-editor:zoom-to-selection" }
+          {
+            "label": "Auto Select",
+            "command": "image-editor:auto-select"
+          },
+          {
+            "label": "Select All",
+            "command": "image-editor:select-all"
+          },
+          {
+            "label": "Copy to Clipboard",
+            "command": "image-editor:copy-selection"
+          },
+          {
+            "label": "Crop to Selection",
+            "command": "image-editor:crop-to-selection"
+          },
+          {
+            "label": "Zoom to Selection",
+            "command": "image-editor:zoom-to-selection"
+          }
         ]
       },
-      { "type": "separator" },
-      { "label": "Undo", "command": "image-editor:undo" },
-      { "label": "Redo", "command": "image-editor:redo" },
-      { "type": "separator" },
-      { "label": "Copy Path", "command": "image-editor:copy-path" },
-      { "label": "Copy Project Path", "command": "image-editor:copy-project-path" },
-      { "type": "separator" },
-      { "label": "Save", "command": "core:save" },
-      { "label": "Save As...", "command": "core:save-as" },
-      { "type": "separator" }
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Undo",
+        "command": "image-editor:undo"
+      },
+      {
+        "label": "Redo",
+        "command": "image-editor:redo"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Copy Path",
+        "command": "image-editor:copy-path"
+      },
+      {
+        "label": "Copy Project Path",
+        "command": "image-editor:copy-project-path"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Save",
+        "command": "core:save"
+      },
+      {
+        "label": "Save As\u2026",
+        "command": "core:save-as"
+      },
+      {
+        "type": "separator"
+      }
+    ],
+    "atom-text-editor[data-grammar=\"text html svg\"]:not([mini])": [
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Open in Image Editor",
+        "command": "image-editor:open-in-new-tab"
+      },
+      {
+        "type": "separator"
+      }
     ]
   }
 }
