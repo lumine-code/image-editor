@@ -28,15 +28,15 @@ describe("image-editor", () => {
   const samplePath = path.join(__dirname, "fixtures", "sample.png");
 
   beforeEach(async () => {
-    workspaceElement = atom.views.getView(atom.workspace);
+    workspaceElement = lumine.views.getView(lumine.workspace);
     jasmine.attachToDOM(workspaceElement);
-    const pkg = await atom.packages.activatePackage("image-editor");
+    const pkg = await lumine.packages.activatePackage("image-editor");
     mainModule = pkg.mainModule;
   });
 
   describe("opener", () => {
     it("opens .png URIs as an ImageEditor pane item", async () => {
-      const item = await atom.workspace.open(samplePath);
+      const item = await lumine.workspace.open(samplePath);
       expect(item instanceof ImageEditor).toBe(true);
       expect(item.getPath()).toBe(samplePath);
       expect(item.getTitle()).toBe("sample.png");
@@ -44,15 +44,15 @@ describe("image-editor", () => {
     });
 
     it("does not intercept non-image URIs", async () => {
-      const item = await atom.workspace.open(path.join(__dirname, "image-editor-spec.js"));
+      const item = await lumine.workspace.open(path.join(__dirname, "image-editor-spec.js"));
       expect(item instanceof ImageEditor).toBe(false);
-      expect(atom.workspace.isTextEditor(item)).toBe(true);
+      expect(lumine.workspace.isTextEditor(item)).toBe(true);
     });
   });
 
   describe("serialization", () => {
     it("round-trips through serialize/deserialize", async () => {
-      const item = await atom.workspace.open(samplePath);
+      const item = await lumine.workspace.open(samplePath);
       const state = item.serialize();
       expect(state.deserializer).toBe("ImageEditor");
       expect(state.filePath).toBe(samplePath);
@@ -88,7 +88,7 @@ describe("image-editor", () => {
       expect(editor.getTitle()).toBe("Test Image");
       expect(editor.getDataUrl()).toBe(DATA_URL);
       expect(editor.isModified()).toBe(true);
-      expect(atom.workspace.getActivePaneItem()).toBe(editor);
+      expect(lumine.workspace.getActivePaneItem()).toBe(editor);
     });
   });
 
@@ -99,7 +99,7 @@ describe("image-editor", () => {
       expect(typeof adapter.observeHeaders).toBe("function");
       expect(typeof adapter.navigateTo).toBe("function");
 
-      const item = await atom.workspace.open(samplePath);
+      const item = await lumine.workspace.open(samplePath);
       expect(adapter.handlesItem(item)).toBe(true);
       expect(adapter.handlesItem({})).toBe(false);
 

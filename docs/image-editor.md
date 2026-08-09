@@ -43,7 +43,7 @@ Returns the editor item, synchronously.
 ## Minimal example
 
 ```js
-const { Disposable } = require("atom");
+const { Disposable } = require("lumine");
 
 module.exports = {
   consumeImageEditor(imageEditor) {

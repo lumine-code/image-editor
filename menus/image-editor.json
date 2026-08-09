@@ -228,7 +228,7 @@
         "type": "separator"
       }
     ],
-    "atom-text-editor[data-grammar=\"text html svg\"]:not([mini])": [
+    "lumine-text-editor[data-grammar=\"text html svg\"]:not([mini])": [
       {
         "type": "separator"
       },
