@@ -75,8 +75,7 @@ Commands available in `.image-editor`:
 - `image-editor:hide-selection`: clear selection,
 - `image-editor:show-properties`: view file and image info,
 - `image-editor:undo`: revert to previous state,
-- `image-editor:redo`: restore next state,
-- `image-editor:attach-to-claude`: attach image to Claude chat.
+- `image-editor:redo`: restore next state.
 
 ## Mouse controls
 
@@ -133,7 +132,6 @@ The opened image will be marked as "modified" and prompt the user to save when c
 - **navigation.adapter** (`1.0.0`): provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
 - **status-bar** (`^1.0.0`): consumed to show image dimensions, file size, and mouse position in the status bar.
 - **tree-view.selection** (`^1.0.0`): consumed to read the selected paths for the "Open in Image Editor" context command.
-- **claude-chat** (`^1.0.0`): consumed to attach the current image to a Claude chat conversation.
 
 ## Contributing
 
