@@ -19,7 +19,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 
 ## Installation
 
-To install `image-editor` search for _image-editor_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/image-editor`.
+To install `image-editor` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/image-editor`.
 
 ## Commands
 
@@ -128,10 +128,10 @@ The opened image will be marked as "modified" and prompt the user to save when c
 
 ## Services
 
-- **[image-editor](docs/image-editor.md)** (`1.0.0`): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
-- **navigation.adapter** (`1.0.0`): provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
-- **status-bar** (`^1.0.0`): consumed to show image dimensions, file size, and mouse position in the status bar.
-- **tree-view.selection** (`^1.0.0`): consumed to read the selected paths for the "Open in Image Editor" context command.
+- [`image-editor`](docs/image-editor.md): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
+- `navigation.adapter`: provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
+- `status-bar`: consumed to show image dimensions, file size, and mouse position in the status bar.
+- `tree-view.selection`: consumed to read the selected paths for the "Open in Image Editor" context command.
 
 ## Contributing
 
