@@ -93,23 +93,23 @@
     }
 
     .selection-box {
-      /* The corner grips are the same ink as the border and sit flush inside
-         it, so each corner reads as one thick L rather than a square pinned
-         over the frame. Everything below positions against the padding box,
-         which is the inner edge of that border. */
-      --selection-grip: 9px;
+      /* One frame, spelled the same way as graviss's print region: a 2px
+         accent line, a grip of that same ink flush inside each corner so the
+         corner reads as one thick L, and a dark hairline outside the lot.
+         Everything below positions against the padding box, which is the
+         inner edge of that border. */
+      --selection-line: var(--text-color-info);
+      --selection-grip: 7px;
 
       position: absolute;
-      border: 2px solid var(--ui-site-color-1);
-      /* The frame takes its line from the theme but sits on whatever the image
-         happens to be, so a dark hairline outside it keeps the edge readable
-         over light content. The grips are contiguous with the border, so the
-         one halo covers the whole frame. */
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+      border: 2px solid var(--selection-line);
+      /* The line comes from the theme but sits on whatever the image happens
+         to be, so the hairline keeps the edge readable over light content.
+         The grips are contiguous with the border, so one halo covers both. */
+      box-shadow: 0 0 0 1px color-mix(in srgb, black 30%, transparent);
       pointer-events: none;
       display: none;
       box-sizing: border-box;
-      background: rgba(255, 255, 255, 0.02);
       cursor: move;
     }
 
@@ -165,10 +165,21 @@
       position: absolute;
       width: var(--selection-grip);
       height: var(--selection-grip);
-      background: var(--ui-site-color-1);
+      background: var(--selection-line);
       pointer-events: auto;
       box-sizing: border-box;
       z-index: 10;
+
+      /* Graviss paints its grips and hit-tests them in JS, so it sizes them
+         for the eye alone. These are the drag targets themselves, and 7px is
+         under what a pointer wants, so the grabbable area is grown past the
+         ink. A pseudo-element reports its host as the event target, so the
+         mousedown still arrives on .selection-handle. */
+      &::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+      }
 
       &.nw {
         top: 0;
