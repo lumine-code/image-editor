@@ -101,6 +101,11 @@
 
       position: absolute;
       border: 2px solid var(--ui-site-color-1);
+      /* The frame takes its line from the theme but sits on whatever the image
+         happens to be, so a dark hairline outside it keeps the edge readable
+         over light content. The grips are contiguous with the border, so the
+         one halo covers the whole frame. */
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
       pointer-events: none;
       display: none;
       box-sizing: border-box;
