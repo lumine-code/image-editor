@@ -93,9 +93,14 @@
     }
 
     .selection-box {
+      /* The corner grips are the same ink as the border and sit flush inside
+         it, so each corner reads as one thick L rather than a square pinned
+         over the frame. Everything below positions against the padding box,
+         which is the inner edge of that border. */
+      --selection-grip: 9px;
+
       position: absolute;
       border: 2px solid var(--ui-site-color-1);
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
       pointer-events: none;
       display: none;
       box-sizing: border-box;
@@ -103,7 +108,9 @@
       cursor: move;
     }
 
-    /* Edge resize bars - full length clickable borders */
+    /* Edge resize bars - full length clickable borders. Each stops a grip's
+       width short of the corners, so the corner always resizes on both axes
+       instead of whichever edge happens to come later in the DOM. */
     .selection-edge {
       position: absolute;
       pointer-events: auto;
@@ -112,8 +119,8 @@
       /* North edge (top) */
       &.edge-n {
         top: -4px;
-        left: 8px;
-        right: 8px;
+        left: var(--selection-grip);
+        right: var(--selection-grip);
         height: 8px;
         cursor: n-resize;
       }
@@ -121,8 +128,8 @@
       /* South edge (bottom) */
       &.edge-s {
         bottom: -4px;
-        left: 8px;
-        right: 8px;
+        left: var(--selection-grip);
+        right: var(--selection-grip);
         height: 8px;
         cursor: s-resize;
       }
@@ -130,8 +137,8 @@
       /* East edge (right) */
       &.edge-e {
         right: -4px;
-        top: 8px;
-        bottom: 8px;
+        top: var(--selection-grip);
+        bottom: var(--selection-grip);
         width: 8px;
         cursor: e-resize;
       }
@@ -139,43 +146,43 @@
       /* West edge (left) */
       &.edge-w {
         left: -4px;
-        top: 8px;
-        bottom: 8px;
+        top: var(--selection-grip);
+        bottom: var(--selection-grip);
         width: 8px;
         cursor: w-resize;
       }
     }
 
-    /* Corner handles */
+    /* Corner handles. Flush against the inside of the border rather than
+       straddling it, so the grip continues the frame instead of overhanging
+       it. z-index puts them over the edge bars where the two meet. */
     .selection-handle {
       position: absolute;
-      width: 10px;
-      height: 10px;
+      width: var(--selection-grip);
+      height: var(--selection-grip);
       background: var(--ui-site-color-1);
-      border: 1px solid white;
-      box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
       pointer-events: auto;
       box-sizing: border-box;
       z-index: 10;
 
       &.nw {
-        top: -5px;
-        left: -5px;
+        top: 0;
+        left: 0;
         cursor: nw-resize;
       }
       &.ne {
-        top: -5px;
-        right: -5px;
+        top: 0;
+        right: 0;
         cursor: ne-resize;
       }
       &.se {
-        bottom: -5px;
-        right: -5px;
+        bottom: 0;
+        right: 0;
         cursor: se-resize;
       }
       &.sw {
-        bottom: -5px;
-        left: -5px;
+        bottom: 0;
+        left: 0;
         cursor: sw-resize;
       }
     }
