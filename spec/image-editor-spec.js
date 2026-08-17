@@ -1,3 +1,5 @@
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const ImageEditor = require("../lib/editor");
 
@@ -74,6 +76,64 @@ describe("image-editor", () => {
       const editor = ImageEditor.fromDataUrl(DATA_URL, "Temp");
       expect(editor.serialize()).toBeNull();
       editor.destroy();
+    });
+  });
+
+  describe("saving", () => {
+    let tempDir, tempPath;
+
+    beforeEach(() => {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "image-editor-"));
+      tempPath = path.join(tempDir, "sample.png");
+      fs.copyFileSync(samplePath, tempPath);
+    });
+
+    afterEach(() => {
+      // Close the editor before the file goes away, so its watcher stops first.
+      for (const item of lumine.workspace.getPaneItems()) {
+        if (item instanceof ImageEditor) item.destroy();
+      }
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    async function openZoomedView() {
+      const item = await lumine.workspace.open(tempPath);
+      const view = item.view;
+      await pollUntil(() => view.loaded);
+      // The spec workspace has no height, so zoom is set the way a manual zoom
+      // leaves it rather than through updateSize, which needs a laid-out element.
+      view.disableAutoZoom();
+      view.zoom = 2;
+      view.translateX = 40;
+      view.translateY = -25;
+      return { item, view };
+    }
+
+    function expectViewport(view) {
+      expect(view.zoom).toBe(2);
+      expect(view.translateX).toBe(40);
+      expect(view.translateY).toBe(-25);
+    }
+
+    it("does not reload the file it just wrote", async () => {
+      const { item, view } = await openZoomedView();
+      const src = view.refs.image.src;
+
+      await item.save();
+      await pollUntil(() => view.lastSelfWrite != null);
+
+      // Stands in for the watcher event the save raises.
+      await view.updateImageURI();
+      expect(view.lastSelfWrite.path).toBe(tempPath);
+      expect(view.refs.image.src).toBe(src);
+      expectViewport(view);
+    });
+
+    it("keeps the zoom and pan across a forced reload of the same image", async () => {
+      const { view } = await openZoomedView();
+
+      await view.updateImageURI({ force: true });
+      expectViewport(view);
     });
   });
 
