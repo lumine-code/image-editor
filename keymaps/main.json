@@ -7,7 +7,7 @@
     "r": "image-editor:reload",
     "7": "image-editor:reset-zoom",
     "8": "image-editor:center",
-    "9": "image-editor:zoom-to-fit",
+    "f": "image-editor:zoom-to-fit",
     "0": "image-editor:zoom-to-selection",
     "b": "image-editor:blur-medium",
     "s": "image-editor:sharpen-medium",
