@@ -504,6 +504,21 @@ describe("image-editor", () => {
       }
     });
 
+    it("falls back to the whole image when a selection has been dragged flat", async () => {
+      // A visible selection with no area used to refuse everywhere except
+      // auto-adjust, which quietly dropped it and treated the whole image as
+      // the target. All ten do that now.
+      view.setSelectionVisibility(true);
+      view.selectionStartImg = { x: 1, y: 1 };
+      view.selectionEndImg = { x: 1, y: 2 };
+      expect(view.getSelectionArea()).toBe(null);
+
+      view.invertColors();
+      await pollUntil(() => view.historyManager.length === 1);
+
+      expect(view.historyManager.getCurrentState().imageWidth).toBe(2);
+    });
+
     it("checks the image is loaded on every filter, not four of ten", async () => {
       view.loaded = false;
       const before = view.historyManager.length;
@@ -751,15 +766,34 @@ describe("image-editor", () => {
       }
     });
 
-    it("outlives a reload of the image itself", async () => {
-      // A load says nothing about what is in the directory, but it used to
-      // throw the listing away on its way out, so the next step paid for a
-      // full re-read.
+    it("is read again when the user explicitly asks for a reload", async () => {
+      // A plain load says nothing about the folder. Asking for a reload does:
+      // it means read it all again, and the folder is part of that.
       await view.nextImage();
       await pollUntil(() => view.editor.getPath() !== samplePath);
       expect(reads).toBe(1);
 
       await view.updateImageURI({ force: true });
+      await pollUntil(() => view.loaded);
+      await view.previousImage();
+      await pollUntil(() => view.editor.getPath() === samplePath);
+
+      expect(reads).toBe(2);
+    });
+
+    it("outlives an ordinary reload of the image itself", async () => {
+      // A load the watcher asks for says nothing about what is in the folder,
+      // but it used to throw the listing away on its way out, so the next step
+      // paid for a full re-read. Only an explicit reload does that now.
+      await view.nextImage();
+      await pollUntil(() => view.editor.getPath() !== samplePath);
+      expect(reads).toBe(1);
+
+      // Touched, so the load is not waved through as already showing.
+      const current = view.editor.getPath();
+      const later = new Date(fs.statSync(current).mtimeMs + 5000);
+      fs.utimesSync(current, later, later);
+      await view.updateImageURI();
       await pollUntil(() => view.loaded);
 
       await view.previousImage();

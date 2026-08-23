@@ -221,3 +221,45 @@ describe("walking the history", () => {
     assert.equal(entry.auto, false);
   });
 });
+
+describe("abandoning a slot", () => {
+  it("takes back a newest slot whose pixels never arrived", () => {
+    const history = new HistoryManager();
+    record(history);
+    const doomed = history.beginEntry(VIEW_STATE, SMALL);
+    assert.equal(history.length, 2);
+    assert.equal(history.isModified(), true);
+
+    history.abandonEntry(doomed);
+
+    // Nothing changed on screen, so nothing should say otherwise.
+    assert.equal(history.length, 1);
+    assert.equal(history.historyIndex, 0);
+    assert.equal(history.isModified(), false);
+  });
+
+  it("leaves an older slot in place, so the ones after it keep their positions", () => {
+    const history = new HistoryManager();
+    const first = record(history);
+    const second = record(history);
+    const third = record(history);
+
+    history.abandonEntry(second);
+
+    assert.equal(history.length, 3);
+    assert.equal(history.history[0], first);
+    assert.equal(history.history[2], third);
+    assert.equal(second.released, true);
+  });
+
+  it("says the image is unmodified again after the only edit failed", () => {
+    const seen = [];
+    const history = new HistoryManager({ onModifiedStateChange: (m) => seen.push(m) });
+    record(history);
+    const doomed = history.beginEntry(VIEW_STATE, SMALL);
+
+    history.abandonEntry(doomed);
+
+    assert.deepEqual(seen, [true, false]);
+  });
+});
