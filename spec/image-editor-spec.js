@@ -395,6 +395,67 @@ describe("image-editor", () => {
     });
   });
 
+  describe("running a filter", () => {
+    let item, view;
+
+    beforeEach(async () => {
+      item = await lumine.workspace.open(samplePath);
+      view = item.view;
+      await pollUntil(() => view.loaded);
+      view.historyManager.needsInitialSave = false;
+    });
+
+    afterEach(() => {
+      for (const paneItem of lumine.workspace.getPaneItems()) {
+        if (paneItem instanceof ImageEditor) paneItem.destroy();
+      }
+    });
+
+    it("completes an operation that waits for the spinner to paint", async () => {
+      // The deferral used to be a setTimeout, which the spec runner freezes,
+      // so nothing here could reach the blur and sharpen paths at all.
+      view.blurImage(1);
+      await pollUntil(() => view.historyManager.length === 1, 10000);
+      await view.historyManager.getCurrentState().ready;
+
+      expect(view.historyManager.getCurrentState().blob instanceof Blob).toBe(true);
+      expect(view.filterInProgress).toBe(false);
+    });
+
+    it("refuses a read-only image before doing the work, not after", async () => {
+      const encoded = [];
+      const real = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function (...args) {
+        encoded.push(1);
+        return real.apply(this, args);
+      };
+      view.readOnly = true;
+
+      try {
+        view.applySepia();
+        expect(encoded.length).toBe(0);
+        expect(view.historyManager.length).toBe(0);
+      } finally {
+        HTMLCanvasElement.prototype.toBlob = real;
+        view.readOnly = false;
+      }
+    });
+
+    it("checks the image is loaded on every filter, not four of ten", async () => {
+      view.loaded = false;
+      const before = view.historyManager.length;
+
+      // These four went straight to naturalWidth without checking.
+      view.applyBrightnessContrast(10, 10);
+      view.applySaturation(10);
+      view.applyHueShift(90);
+      view.applyPosterize(4);
+
+      expect(view.historyManager.length).toBe(before);
+      view.loaded = true;
+    });
+  });
+
   describe("the compressed undo format", () => {
     /** Round-trip a half-transparent canvas and report the alpha that survived. */
     async function alphaAfter(type, quality) {
