@@ -218,4 +218,89 @@ describe("image-editor", () => {
       disposable.dispose();
     });
   });
+
+  describe("the directory listing", () => {
+    let item, view, readdir, reads;
+
+    beforeEach(async () => {
+      item = await lumine.workspace.open(samplePath);
+      view = item.view;
+      await pollUntil(() => view.loaded);
+
+      readdir = fs.promises.readdir;
+      reads = 0;
+      fs.promises.readdir = (...args) => {
+        reads++;
+        return readdir(...args);
+      };
+    });
+
+    afterEach(() => {
+      fs.promises.readdir = readdir;
+      for (const paneItem of lumine.workspace.getPaneItems()) {
+        if (paneItem instanceof ImageEditor) paneItem.destroy();
+      }
+    });
+
+    it("is read once across a round trip through the next and previous image", async () => {
+      await view.nextImage();
+      await pollUntil(() => view.editor.getPath() !== samplePath);
+      await view.previousImage();
+      await pollUntil(() => view.editor.getPath() === samplePath);
+
+      expect(reads).toBe(1);
+    });
+
+    it("outlives a reload of the image itself", async () => {
+      // A load says nothing about what is in the directory, but it used to
+      // throw the listing away on its way out, so the next step paid for a
+      // full re-read.
+      await view.nextImage();
+      await pollUntil(() => view.editor.getPath() !== samplePath);
+      expect(reads).toBe(1);
+
+      await view.updateImageURI({ force: true });
+      await pollUntil(() => view.loaded);
+
+      await view.previousImage();
+      await pollUntil(() => view.editor.getPath() === samplePath);
+      expect(reads).toBe(1);
+    });
+
+    it("hands external callers a copy they cannot corrupt", async () => {
+      const list = await view.getFileList();
+      const before = view.navigator.fileListCache.files.slice();
+
+      list.files.reverse();
+
+      expect(view.navigator.fileListCache.files).toEqual(before);
+    });
+
+    it("is invalidated by a file event, without reaching through the view getter", async () => {
+      // The getter builds a view when there is none, running statSync and
+      // starting a load, so a file event anywhere in the project would have
+      // materialized one for every image tab that had so far avoided it.
+      let getterCalls = 0;
+      const inherited = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(item), "view");
+      Object.defineProperty(item, "view", {
+        configurable: true,
+        get() {
+          getterCalls++;
+          return inherited.get.call(this);
+        },
+      });
+
+      try {
+        mainModule.handleFileSystemChanges([
+          { path: path.join(__dirname, "fixtures", "added.png"), action: "created" },
+        ]);
+
+        expect(getterCalls).toBe(0);
+        expect(view.navigator.fileListCache.directoryKey).toBe(null);
+        expect(view.navigator.fileListCache.files.length).toBe(0);
+      } finally {
+        delete item.view;
+      }
+    });
+  });
 });
