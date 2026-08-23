@@ -283,6 +283,55 @@ describe("image-editor", () => {
       expect(entry.blob.size).toBeGreaterThan(0);
     });
 
+    it("encodes an edit once, and shares that one blob with the history", async () => {
+      // The displayed pixels used to be encoded for the screen and then again,
+      // synchronously and off a second full-size canvas, for the history.
+      const real = HTMLCanvasElement.prototype.toBlob;
+      let encodes = 0;
+      HTMLCanvasElement.prototype.toBlob = function (...args) {
+        encodes++;
+        return real.apply(this, args);
+      };
+
+      try {
+        view.historyManager.needsInitialSave = false; // isolate the edit itself
+        view.invertColors();
+        await pollUntil(() => view.historyManager.length === 1);
+        const entry = view.historyManager.getCurrentState();
+        await entry.ready;
+
+        expect(encodes).toBe(1);
+        expect(entry.compact).toBe(false);
+        expect(entry.blob).not.toBe(null);
+      } finally {
+        HTMLCanvasElement.prototype.toBlob = real;
+      }
+    });
+
+    it("encodes twice only when the frame is one it means to compress", async () => {
+      const real = HTMLCanvasElement.prototype.toBlob;
+      let encodes = 0;
+      HTMLCanvasElement.prototype.toBlob = function (...args) {
+        encodes++;
+        return real.apply(this, args);
+      };
+
+      try {
+        view.historyManager.needsInitialSave = false;
+        view.historyManager.largeImagePixels = 1; // anything counts as large
+        view.invertColors();
+        await pollUntil(() => view.historyManager.length === 1);
+        const entry = view.historyManager.getCurrentState();
+        await entry.ready;
+
+        expect(entry.compact).toBe(true);
+        expect(encodes).toBe(2);
+        expect(entry.blob.type).not.toBe("image/png");
+      } finally {
+        HTMLCanvasElement.prototype.toBlob = real;
+      }
+    });
+
     it("releases every frame when the editor goes away", async () => {
       view.invertColors();
       await pollUntil(() => view.historyManager.length === 2);
