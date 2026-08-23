@@ -112,20 +112,48 @@ describe("canvas filters", () => {
       expect(pixelAt(canvas, 40, 30)).toEqual([0, 0, 0, 255]);
     });
 
-    it("blurs a region using content from beyond it", () => {
-      // Half black, half white, with the region entirely inside the white
-      // half but close enough to the seam for the blur to reach it. If the
-      // region were its own source, its edge would stay pure white.
+    it("reads the whole image when blurring the whole image", () => {
+      // Half black, half white. Blurring everything, the seam softens.
       const canvas = solid(80, 40, "rgb(255, 255, 255)");
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       ctx.fillStyle = "rgb(0, 0, 0)";
       ctx.fillRect(0, 0, 40, 40);
 
-      canvasFilters.blurRegion(ctx, { left: 40, top: 0, width: 20, height: 40 }, 6);
+      canvasFilters.blurRegion(ctx, { left: 0, top: 0, width: 80, height: 40 }, 6);
 
       const [r] = pixelAt(canvas, 41, 20);
       expect(r).toBeLessThan(255);
       expect(r).toBeGreaterThan(0);
+    });
+
+    it("keeps a selection's blur made of the selection's own pixels", () => {
+      // The same seam, but the region sits entirely in the white half, close
+      // enough that an unbounded blur would drag the black across its edge.
+      // The old pixel loop could not do that — it was handed the selection's
+      // buffer and nothing else — and neither should this.
+      const canvas = solid(80, 40, "rgb(255, 255, 255)");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "rgb(0, 0, 0)";
+      ctx.fillRect(0, 0, 40, 40);
+      const area = { left: 40, top: 0, width: 20, height: 40 };
+
+      canvasFilters.blurRegion(ctx, area, 6, { sampleWithinArea: true });
+
+      expect(pixelAt(canvas, 41, 20)).toEqual([255, 255, 255, 255]);
+      expect(pixelAt(canvas, 39, 20)).toEqual([0, 0, 0, 255], "outside is untouched");
+    });
+
+    it("leaves a one-pixel selection alone rather than averaging its surroundings", () => {
+      const canvas = solid(60, 60, "rgb(0, 0, 200)");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "rgb(255, 0, 0)";
+      ctx.fillRect(30, 30, 1, 1);
+
+      canvasFilters.blurRegion(ctx, { left: 30, top: 30, width: 1, height: 1 }, 24, {
+        sampleWithinArea: true,
+      });
+
+      expect(pixelAt(canvas, 30, 30)).toEqual([255, 0, 0, 255]);
     });
 
     it("does nothing at all for a zero radius or an empty region", () => {
