@@ -332,6 +332,54 @@ describe("image-editor", () => {
       }
     });
 
+    it("records exactly one state per edit, whichever edit it is", async () => {
+      const edits = [
+        ["invertColors", () => view.invertColors()],
+        ["applySepia", () => view.applySepia()],
+        ["rotate", () => view.rotate(90)],
+        ["flipHorizontal", () => view.flipHorizontal()],
+        ["flipVertical", () => view.flipVertical()],
+        ["resizeImage", () => view.resizeImage(4, 4)],
+      ];
+
+      for (const [name, run] of edits) {
+        view.historyManager.reset();
+        view.historyManager.needsInitialSave = false;
+
+        run();
+        await pollUntil(() => view.historyManager.length === 1, 10000);
+        const entry = view.historyManager.getCurrentState();
+        await entry.ready;
+        await pollUntil(() => view.refs.image.complete && view.refs.image.naturalWidth > 0);
+
+        expect(view.historyManager.length).toBe(1, name);
+        expect(entry.blob instanceof Blob).toBe(true, name);
+        expect(entry.imageWidth).toBe(view.refs.image.naturalWidth, name);
+        expect(entry.imageHeight).toBe(view.refs.image.naturalHeight, name);
+      }
+    });
+
+    it("keeps the pool stocked instead of dropping what it borrows", async () => {
+      // Six of the edit paths never gave their canvases back, so the pool was
+      // always empty and every operation allocated afresh.
+      view.historyManager.needsInitialSave = false;
+      view.flipHorizontal();
+      await pollUntil(() => view.historyManager.length === 1);
+      await view.historyManager.getCurrentState().ready;
+
+      expect(view.canvasPool.pool.length).toBeGreaterThan(0);
+    });
+
+    it("shows a free-rotate preview without recording it", async () => {
+      view.historyManager.needsInitialSave = false;
+      const before = view.historyManager.length;
+
+      view.applyRotatePreview(view.refs.image.src, 2, 2, 30, true);
+      await pollUntil(() => view.refs.image.naturalWidth !== 2);
+
+      expect(view.historyManager.length).toBe(before);
+    });
+
     it("releases every frame when the editor goes away", async () => {
       view.invertColors();
       await pollUntil(() => view.historyManager.length === 2);
