@@ -219,6 +219,104 @@ describe("image-editor", () => {
     });
   });
 
+  describe("blob URL ownership", () => {
+    let view, minted, revoked, createObjectURL, revokeObjectURL;
+
+    beforeEach(async () => {
+      const item = await lumine.workspace.open(samplePath);
+      view = item.view;
+      await pollUntil(() => view.loaded);
+
+      minted = [];
+      revoked = [];
+      createObjectURL = URL.createObjectURL;
+      revokeObjectURL = URL.revokeObjectURL;
+      URL.createObjectURL = (...args) => {
+        const url = createObjectURL(...args);
+        minted.push(url);
+        return url;
+      };
+      URL.revokeObjectURL = (url) => {
+        revoked.push(url);
+        return revokeObjectURL(url);
+      };
+    });
+
+    afterEach(() => {
+      URL.createObjectURL = createObjectURL;
+      URL.revokeObjectURL = revokeObjectURL;
+      for (const item of lumine.workspace.getPaneItems()) {
+        if (item instanceof ImageEditor) item.destroy();
+      }
+    });
+
+    /** A blob of the current image, standing in for one an edit produces. */
+    async function freshBlob() {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 2;
+      canvas.getContext("2d").drawImage(view.refs.image, 0, 0);
+      return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    }
+
+    async function showAFreshBlob() {
+      const url = view.setImageSource(URL.createObjectURL(await freshBlob()));
+      await pollUntil(() => view.refs.image.src === url && view.refs.image.complete);
+      return url;
+    }
+
+    it("holds on to a blob URL until its replacement has loaded", async () => {
+      const first = await showAFreshBlob();
+      expect(revoked).not.toContain(first);
+
+      const blob = await freshBlob();
+      const second = view.setImageSource(URL.createObjectURL(blob));
+      // Still on screen: the replacement has not decoded yet, and releasing
+      // here would leave nothing to fall back to if it never does.
+      expect(revoked).not.toContain(first);
+
+      await pollUntil(() => revoked.includes(first));
+      expect(revoked).not.toContain(second);
+      expect(view.refs.image.src).toBe(second);
+    });
+
+    it("keeps a pinned source alive across swaps, and lets it go afterwards", async () => {
+      const pinned = await showAFreshBlob();
+      view.pinImageUrl(pinned);
+
+      await showAFreshBlob();
+      await showAFreshBlob();
+      expect(revoked).not.toContain(pinned);
+
+      // Put it back the way a free-rotate cancel does; it is on screen again,
+      // so unpinning must not release it.
+      view.setImageSource(pinned);
+      await pollUntil(() => view.refs.image.src === pinned);
+      view.unpinImageUrl(pinned);
+      expect(revoked).not.toContain(pinned);
+    });
+
+    it("releases a pinned URL it is no longer showing", async () => {
+      const pinned = await showAFreshBlob();
+      view.pinImageUrl(pinned);
+      await showAFreshBlob();
+
+      view.unpinImageUrl(pinned);
+      expect(revoked).toContain(pinned);
+    });
+
+    it("hands back every blob URL it still owns when the view goes away", async () => {
+      const shown = await showAFreshBlob();
+      const held = URL.createObjectURL(new Blob(["x"]));
+      view.pinImageUrl(held);
+
+      view.editor.destroy();
+
+      expect(revoked).toContain(shown);
+      expect(revoked).toContain(held);
+      expect(minted.every((url) => revoked.includes(url))).toBe(true);
+    });
+  });
+
   describe("the directory listing", () => {
     let item, view, readdir, reads;
 
