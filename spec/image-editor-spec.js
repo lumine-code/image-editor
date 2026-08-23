@@ -326,7 +326,7 @@ describe("image-editor", () => {
 
         expect(entry.compact).toBe(true);
         expect(encodes).toBe(2);
-        expect(entry.blob.type).not.toBe("image/png");
+        expect(entry.blob.type).toBe("image/webp");
       } finally {
         HTMLCanvasElement.prototype.toBlob = real;
       }
@@ -392,6 +392,52 @@ describe("image-editor", () => {
       item.destroy();
 
       expect(entries.every((entry) => entry.released && entry.blob === null)).toBe(true);
+    });
+  });
+
+  describe("the compressed undo format", () => {
+    /** Round-trip a half-transparent canvas and report the alpha that survived. */
+    async function alphaAfter(type, quality) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 2;
+      canvas.height = 1;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "rgba(255, 0, 0, 1)";
+      ctx.fillRect(0, 0, 1, 1); // opaque red beside a transparent pixel
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+      if (!blob) return null;
+
+      const url = URL.createObjectURL(blob);
+      try {
+        const image = new Image();
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = reject;
+          image.src = url;
+        });
+        const out = document.createElement("canvas");
+        out.width = 2;
+        out.height = 1;
+        const outCtx = out.getContext("2d", { willReadFrequently: true });
+        outCtx.drawImage(image, 0, 0);
+        return Array.from(outCtx.getImageData(0, 0, 2, 1).data);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    it("keeps transparency, which is what the old format destroyed", async () => {
+      const webp = await alphaAfter("image/webp", 0.92);
+      expect(webp).not.toBe(null);
+      expect(webp[7]).toBe(0, "the transparent pixel stays transparent");
+      expect(webp[3]).toBe(255, "the opaque one stays opaque");
+
+      // The reason for the change, stated as a fact about the format rather
+      // than a claim: JPEG carries no alpha channel at all, so the pixel comes
+      // back fully opaque over whatever it was flattened onto.
+      const jpeg = await alphaAfter("image/jpeg", 0.95);
+      expect(jpeg[7]).toBe(255, "JPEG loses the transparency");
     });
   });
 
