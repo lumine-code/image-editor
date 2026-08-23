@@ -129,6 +129,46 @@ describe("image-editor", () => {
       expectViewport(view);
     });
 
+    it("puts the file's revision in the image URL rather than the clock", async () => {
+      const { view } = await openZoomedView();
+      const stats = fs.statSync(tempPath);
+
+      expect(view.refs.image.src).toContain(`?v=${stats.mtimeMs}-${stats.size}`);
+
+      // Touching the file gives a new key, so the reload is not served the
+      // decode the browser already has.
+      const later = new Date(stats.mtimeMs + 5000);
+      fs.utimesSync(tempPath, later, later);
+      await view.updateImageURI();
+      await pollUntil(() => !view.refs.image.src.includes(`${stats.mtimeMs}-`));
+      expect(view.refs.image.src).toContain(`${fs.statSync(tempPath).mtimeMs}-`);
+    });
+
+    it("does no work when asked to reload a file that has not changed", async () => {
+      const { view } = await openZoomedView();
+      let loads = 0;
+      const subscription = view.onDidLoad(() => loads++);
+
+      // Stands in for a watcher event that reports no actual change. Reloading
+      // would decode the image again and reset the undo history on the way, so
+      // the load must not be entered at all.
+      await view.updateImageURI();
+
+      expect(loads).toBe(0);
+      expect(view.loaded).toBe(true);
+      expect(view.refs.image.naturalWidth).toBeGreaterThan(0);
+      expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
+      expectViewport(view);
+
+      // A real change still gets through.
+      const later = new Date(fs.statSync(tempPath).mtimeMs + 5000);
+      fs.utimesSync(tempPath, later, later);
+      await view.updateImageURI();
+      expect(loads).toBe(1);
+
+      subscription.dispose();
+    });
+
     it("keeps the zoom and pan across a forced reload of the same image", async () => {
       const { view } = await openZoomedView();
 
