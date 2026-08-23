@@ -251,6 +251,27 @@ describe("image-editor", () => {
       expect(reads).toBe(1);
     });
 
+    it("is consulted once per step, for the boundary and the step together", async () => {
+      // Taken separately, the boundary check and the step were two awaits with
+      // a window between them: a file event can invalidate the cache in that
+      // window, and the overlay would then describe a boundary the step no
+      // longer sees.
+      const real = view.navigator.getFileList.bind(view.navigator);
+      let calls = 0;
+      view.navigator.getFileList = (...args) => {
+        calls++;
+        return real(...args);
+      };
+
+      try {
+        await view.nextImage();
+        await pollUntil(() => view.editor.getPath() !== samplePath);
+        expect(calls).toBe(1);
+      } finally {
+        delete view.navigator.getFileList;
+      }
+    });
+
     it("outlives a reload of the image itself", async () => {
       // A load says nothing about what is in the directory, but it used to
       // throw the listing away on its way out, so the next step paid for a

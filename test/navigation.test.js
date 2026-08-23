@@ -196,6 +196,28 @@ describe("getAdjacentImage and friends", () => {
     });
   });
 
+  it("steps from a listing already in hand, without consulting anything", () => {
+    // Synchronous and free of the lumine global on purpose: it is what lets a
+    // caller decide about the boundary and take the step from one snapshot.
+    const navigator = new ImageNavigator();
+    const list = { files: ["/a.png", "/b.png", "/c.png"], currentIndex: 1 };
+
+    assert.equal(navigator.stepFrom(list, 1, { cycle: false }), "/c.png");
+    assert.equal(navigator.stepFrom(list, -1, { cycle: false }), "/a.png");
+
+    assert.equal(navigator.stepFrom({ ...list, currentIndex: 2 }, 1, { cycle: true }), "/a.png");
+    assert.equal(navigator.stepFrom({ ...list, currentIndex: 0 }, -1, { cycle: true }), "/c.png");
+    assert.equal(navigator.stepFrom({ ...list, currentIndex: 2 }, 1, { cycle: false }), null);
+    assert.equal(navigator.stepFrom({ ...list, currentIndex: 0 }, -1, { cycle: false }), null);
+
+    assert.equal(navigator.stepFrom({ files: [], currentIndex: -1 }, 1, { cycle: true }), null);
+    assert.equal(navigator.stepFrom({ ...list, currentIndex: -1 }, 1, { cycle: true }), null);
+
+    const single = { files: ["/only.png"], currentIndex: 0 };
+    assert.equal(navigator.stepFrom(single, 1, { cycle: true }), "/only.png");
+    assert.equal(navigator.stepFrom(single, 1, { cycle: false }), null);
+  });
+
   it("reports the ends", async () => {
     makeFiles(["a.png", "b.png"]);
     const navigator = new ImageNavigator();
