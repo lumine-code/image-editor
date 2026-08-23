@@ -219,6 +219,85 @@ describe("image-editor", () => {
     });
   });
 
+  describe("undo history", () => {
+    let item, view;
+
+    beforeEach(async () => {
+      item = await lumine.workspace.open(samplePath);
+      view = item.view;
+      await pollUntil(() => view.loaded);
+      view.disableAutoZoom();
+    });
+
+    afterEach(() => {
+      for (const paneItem of lumine.workspace.getPaneItems()) {
+        if (paneItem instanceof ImageEditor) paneItem.destroy();
+      }
+    });
+
+    /**
+     * The image's pixels, so an undo can be checked rather than assumed.
+     * Null while a replacement is still decoding, which is the window the
+     * polling below is waiting out.
+     */
+    function currentPixels() {
+      const image = view.refs.image;
+      if (!image.complete || image.naturalWidth === 0) return null;
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      return Array.from(ctx.getImageData(0, 0, canvas.width, canvas.height).data).join();
+    }
+
+    it("keeps frames as blobs and puts the pixels back on undo", async () => {
+      const before = currentPixels();
+      expect(before).not.toBe(null);
+
+      view.invertColors();
+      await pollUntil(() => view.historyManager.length === 2);
+      await pollUntil(() => view.historyManager.history.every((entry) => entry.settled));
+      await pollUntil(() => currentPixels() !== null && currentPixels() !== before);
+
+      const entry = view.historyManager.getCurrentState();
+      expect(entry.blob instanceof Blob).toBe(true);
+      expect(entry.imageData).toBeUndefined();
+      expect(view.refs.image.src.startsWith("blob:")).toBe(true);
+
+      await view.undo();
+      await pollUntil(() => currentPixels() === before);
+      expect(currentPixels()).toBe(before);
+    });
+
+    it("gives the pooled canvas back only once the encoder has read it", async () => {
+      // Returning it any sooner lets the pool resize and clear the canvas out
+      // from under the encode, which records a blank frame.
+      view.invertColors();
+      await pollUntil(() => view.historyManager.length === 2);
+
+      const entry = view.historyManager.getCurrentState();
+      await entry.ready;
+
+      expect(entry.blob).not.toBe(null);
+      expect(entry.blob.size).toBeGreaterThan(0);
+    });
+
+    it("releases every frame when the editor goes away", async () => {
+      view.invertColors();
+      await pollUntil(() => view.historyManager.length === 2);
+      await pollUntil(() => view.historyManager.history.every((entry) => entry.settled));
+
+      const entries = view.historyManager.history.slice();
+      await Promise.all(entries.map((entry) => view.historyManager.urlFor(entry)));
+      expect(entries.every((entry) => entry.url != null)).toBe(true);
+
+      item.destroy();
+
+      expect(entries.every((entry) => entry.released && entry.blob === null)).toBe(true);
+    });
+  });
+
   describe("blob URL ownership", () => {
     let view, minted, revoked, createObjectURL, revokeObjectURL;
 
