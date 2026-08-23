@@ -99,12 +99,20 @@
       "default": 30
     },
     "largeImageThreshold": {
-      "title": "Large Image Threshold",
-      "description": "File size threshold (in MB) for applying optimizations. Images larger than this will use async decoding and compressed history.",
+      "title": "Async Decode Threshold",
+      "description": "File size (in MB) above which an image is decoded asynchronously as it loads.",
       "type": "number",
       "minimum": 0.5,
       "maximum": 50,
       "default": 2
+    },
+    "largeImagePixelThreshold": {
+      "title": "Large Image Threshold",
+      "description": "Size (in megapixels) above which undo states are stored compressed and fewer of them are kept.",
+      "type": "number",
+      "minimum": 0.25,
+      "maximum": 100,
+      "default": 4
     },
     "maxHistorySize": {
       "title": "Maximum History Size",
