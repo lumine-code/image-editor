@@ -456,6 +456,41 @@ describe("image-editor", () => {
     });
   });
 
+  describe("the properties dialog", () => {
+    let item, view;
+
+    beforeEach(async () => {
+      item = await lumine.workspace.open(samplePath);
+      view = item.view;
+      await pollUntil(() => view.loaded);
+    });
+
+    afterEach(() => {
+      for (const backdrop of document.querySelectorAll(".image-editor-dialog-backdrop")) {
+        backdrop.remove();
+      }
+      for (const paneItem of lumine.workspace.getPaneItems()) {
+        if (paneItem instanceof ImageEditor) paneItem.destroy();
+      }
+    });
+
+    it("draws its rows, including where the file sits in the folder", async () => {
+      // It reaches across into the navigator part way through building the
+      // table, so anything missing there takes the whole dialog down before a
+      // single row reaches the screen.
+      await view.showPropertiesDialog();
+
+      const rows = Array.from(document.querySelectorAll(".image-editor-dialog-backdrop tr"));
+      const labels = rows.map((row) => row.cells[0] && row.cells[0].textContent);
+
+      expect(labels).toContain("Dimensions:");
+      expect(labels).toContain("Position in folder:");
+
+      const position = rows.find((row) => row.cells[0].textContent === "Position in folder:");
+      expect(position.cells[1].textContent).toBe("2 / 2");
+    });
+  });
+
   describe("the compressed undo format", () => {
     /** Round-trip a half-transparent canvas and report the alpha that survived. */
     async function alphaAfter(type, quality) {
