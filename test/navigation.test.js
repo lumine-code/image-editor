@@ -11,6 +11,7 @@ const os = require("os");
 const path = require("path");
 
 const ImageNavigator = require("../lib/navigation");
+const paths = require("../lib/paths");
 
 let dir;
 
@@ -107,6 +108,30 @@ describe("getFileList", () => {
     } finally {
       fs.promises.readdir = real;
     }
+  });
+
+  it("exposes a folded directory key the watcher can match on", async () => {
+    makeFiles(["a.png"]);
+    const navigator = new ImageNavigator();
+    await navigator.getFileList(path.join(dir, "a.png"));
+    assert.equal(navigator.fileListCache.directoryKey, paths.normalizePathKey(dir));
+    assert.equal(navigator.fileListCache.directory, dir, "the readable form is kept too");
+  });
+
+  it("keeps the index in step with the listing it belongs to", async () => {
+    makeFiles(["a.png", "b.png"]);
+    const navigator = new ImageNavigator();
+    await navigator.getFileList(path.join(dir, "a.png"));
+    assert.equal(navigator.fileListCache.index.size, 2);
+
+    navigator.invalidateCache();
+    assert.equal(navigator.fileListCache.index.size, 0);
+    assert.equal(navigator.fileListCache.directoryKey, null);
+
+    makeFiles(["a.png", "b.png", "c.png"]);
+    await navigator.getFileList(path.join(dir, "c.png"));
+    assert.equal(navigator.fileListCache.index.size, 3);
+    assert.equal(navigator.fileListCache.currentIndex, 2);
   });
 
   it("tracks the current index across cached lookups", async () => {
