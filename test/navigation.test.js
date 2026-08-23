@@ -60,6 +60,16 @@ describe("getFileList", () => {
     );
   });
 
+  it("steps through an icon, which the editor opens but the list used to omit", async () => {
+    makeFiles(["a.ico", "b.png", "c.svg"]);
+    const list = await new ImageNavigator().getFileList(path.join(dir, "a.ico"));
+    assert.deepEqual(
+      list.files.map((f) => path.basename(f)),
+      ["a.ico", "b.png", "c.svg"],
+    );
+    assert.equal(list.currentIndex, 0);
+  });
+
   it("finds the current file when its path is spelled differently", async () => {
     // The watcher, the tree view and readdir disagree about case and
     // separators on Windows, and this is the lookup that has to survive it.

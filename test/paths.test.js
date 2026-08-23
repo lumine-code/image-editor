@@ -99,3 +99,34 @@ describe("cacheKeyForStats", () => {
     }
   });
 });
+
+describe("the extension lists", () => {
+  it("lets the arrow keys reach everything the editor opens", () => {
+    // These were two lists that disagreed: .ico opened happily through the
+    // opener and then never appeared in the folder it was sitting in, while
+    // .svg was navigable but not in the opener's list at all.
+    for (const ext of paths.IMAGE_EXTENSIONS) {
+      assert.ok(paths.NAVIGABLE_EXTENSIONS.includes(ext), `${ext} is navigable`);
+    }
+    for (const ext of paths.OPTIONAL_IMAGE_EXTENSIONS) {
+      assert.ok(paths.NAVIGABLE_EXTENSIONS.includes(ext), `${ext} is navigable`);
+    }
+    assert.ok(paths.NAVIGABLE_EXTENSIONS.includes(".ico"));
+    assert.ok(paths.NAVIGABLE_EXTENSIONS.includes(".svg"));
+  });
+
+  it("keeps the two kinds apart, since only one is opened unasked", () => {
+    assert.ok(!paths.IMAGE_EXTENSIONS.includes(".svg"));
+    assert.equal(
+      paths.NAVIGABLE_EXTENSIONS.length,
+      paths.IMAGE_EXTENSIONS.length + paths.OPTIONAL_IMAGE_EXTENSIONS.length,
+    );
+  });
+
+  it("lists every extension lowercase and dotted, which is how they are matched", () => {
+    for (const ext of paths.NAVIGABLE_EXTENSIONS) {
+      assert.equal(ext, ext.toLowerCase());
+      assert.ok(ext.startsWith("."), ext);
+    }
+  });
+});

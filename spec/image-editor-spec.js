@@ -534,6 +534,85 @@ describe("image-editor", () => {
     });
   });
 
+  describe("moving off unsaved edits", () => {
+    let item, view, asked, answer, realConfirm;
+
+    beforeEach(async () => {
+      item = await lumine.workspace.open(samplePath);
+      view = item.view;
+      await pollUntil(() => view.loaded);
+      // The initial frame is wanted here: modified means there is a state to
+      // go back to, which takes two.
+      asked = [];
+      answer = 1;
+      realConfirm = lumine.window.confirm;
+      lumine.window.confirm = (options) => {
+        asked.push(options);
+        return Promise.resolve(answer);
+      };
+    });
+
+    afterEach(() => {
+      lumine.window.confirm = realConfirm;
+      for (const paneItem of lumine.workspace.getPaneItems()) {
+        if (paneItem instanceof ImageEditor) paneItem.destroy();
+      }
+    });
+
+    async function makeDirty() {
+      view.invertColors();
+      await pollUntil(() => view.historyManager.length === 2);
+      await pollUntil(() => view.isModified());
+    }
+
+    it("says nothing when there is nothing to lose", async () => {
+      const before = view.editor.getPath();
+      await view.nextImage();
+      await pollUntil(() => view.editor.getPath() !== before);
+
+      expect(asked.length).toBe(0);
+    });
+
+    it("asks before an arrow key would throw the edits away", async () => {
+      // Reloading has always refused to overwrite unsaved work; stepping to
+      // the next image went straight past that and reset the history on
+      // arrival, so the edits went without a word.
+      await makeDirty();
+      const before = view.editor.getPath();
+
+      answer = 1; // Cancel
+      await view.nextImage();
+
+      expect(asked.length).toBe(1);
+      expect(asked[0].buttons).toEqual(["Save", "Cancel", "Don't Save"]);
+      expect(view.editor.getPath()).toBe(before);
+      expect(view.isModified()).toBe(true);
+    });
+
+    it("goes anyway when told to", async () => {
+      await makeDirty();
+      const before = view.editor.getPath();
+
+      answer = 2; // Don't Save
+      await view.nextImage();
+      await pollUntil(() => view.editor.getPath() !== before);
+
+      expect(view.editor.getPath()).not.toBe(before);
+    });
+
+    it("guards every way out, not just the arrow keys", async () => {
+      await makeDirty();
+      answer = 1;
+
+      // Two entry points that would both move: the guard sits in the load
+      // itself, so it does not matter which command got there.
+      await view.firstImage();
+      await view.previousImage();
+
+      expect(asked.length).toBe(2);
+    });
+  });
+
   describe("the properties dialog", () => {
     let item, view;
 
