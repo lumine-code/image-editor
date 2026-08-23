@@ -441,6 +441,44 @@ describe("image-editor", () => {
       }
     });
 
+    it("still transforms a read-only image, without recording an undo state", async () => {
+      // The SVG paths have always rasterised and rotated on screen; Save As is
+      // how that gets kept. Only the undo state was ever refused.
+      view.readOnly = true;
+      const before = view.refs.image.src;
+
+      let published = false;
+      const subscription = view.onDidUpdate(() => (published = true));
+
+      try {
+        view.rotate(90);
+        // The fixture is square, so the dimensions cannot show the rotation
+        // happened; the new source can. Waiting on did-update rather than on
+        // the element, so the load handler has finished before we look.
+        await pollUntil(() => view.refs.image.src !== before);
+        await pollUntil(() => published);
+
+        expect(view.refs.image.src.startsWith("blob:")).toBe(true);
+        expect(view.historyManager.length).toBe(0);
+        expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
+      } finally {
+        subscription.dispose();
+        view.readOnly = false;
+      }
+    });
+
+    it("clears the spinner when a filter refuses a read-only image", async () => {
+      expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
+      view.readOnly = true;
+
+      try {
+        view.applySepia();
+        expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
+      } finally {
+        view.readOnly = false;
+      }
+    });
+
     it("checks the image is loaded on every filter, not four of ten", async () => {
       view.loaded = false;
       const before = view.historyManager.length;
