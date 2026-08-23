@@ -40,6 +40,10 @@ jobs:
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
+      # The integration job below runs on Linux only, so this is the one place
+      # the path handling in navigation.js is exercised on Windows and macOS.
+      - name: Unit tests
+        run: npm run test:unit
 
   integration:
     # Run the Jasmine spec suite inside a real Lumine build; the specs exercise
