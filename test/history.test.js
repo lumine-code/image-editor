@@ -1,9 +1,9 @@
 /**
- * HistoryManager keeps Blobs and hands out object URLs, and touches no canvas
- * and no DOM, so it runs here rather than inside the editor.
+ * HistoryManager keeps Blobs and touches no canvas, no DOM and no URL, so it
+ * runs here rather than inside the editor.
  */
 
-const { describe, it, beforeEach, afterEach } = require("node:test");
+const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 
 const HistoryManager = require("../lib/history");
@@ -13,22 +13,6 @@ const SMALL = { width: 1, height: 1 };
 const LARGE = { width: 100, height: 100 };
 
 const blobOf = (text) => new Blob([text], { type: "image/png" });
-
-let revoked;
-let realRevoke;
-
-beforeEach(() => {
-  revoked = [];
-  realRevoke = URL.revokeObjectURL;
-  URL.revokeObjectURL = (url) => {
-    revoked.push(url);
-    return realRevoke(url);
-  };
-});
-
-afterEach(() => {
-  URL.revokeObjectURL = realRevoke;
-});
 
 /** Reserve and settle in one go, the common case. */
 function record(history, size = SMALL, text = "x") {
@@ -54,7 +38,7 @@ describe("reserving a slot", () => {
 
     assert.equal(history.history[0], first);
     assert.equal(history.history[1], second);
-    assert.equal(await history.urlFor(history.history[0]), first.url);
+    assert.ok((await history.blobFor(history.history[0])) instanceof Blob);
   });
 
   it("counts as modified the moment the slot is taken, not when it fills", () => {
@@ -77,30 +61,32 @@ describe("reserving a slot", () => {
   });
 });
 
-describe("urlFor", () => {
-  it("mints one URL per entry however often it is asked", async () => {
+describe("blobFor", () => {
+  it("hands back the blob itself, never a URL over it", async () => {
+    // Whoever displays a frame mints its own URL and owns it. The history
+    // holding one too would mean two owners for one string, and a save that
+    // resets the history would revoke what the view is still showing.
     const history = new HistoryManager();
     const entry = record(history);
 
-    const first = await history.urlFor(entry);
-    const second = await history.urlFor(entry);
-
-    assert.equal(first, second);
-    assert.match(first, /^blob:/);
+    const blob = await history.blobFor(entry);
+    assert.ok(blob instanceof Blob);
+    assert.equal(await history.blobFor(entry), blob, "the same blob each time");
+    assert.equal(entry.url, undefined, "no URL is kept on the entry");
   });
 
   it("waits for an entry that has not encoded yet", async () => {
     const history = new HistoryManager();
     const entry = history.beginEntry(VIEW_STATE, SMALL);
 
-    const pending = history.urlFor(entry);
+    const pending = history.blobFor(entry);
     let settled = false;
     pending.then(() => (settled = true));
     await null;
     assert.equal(settled, false);
 
     history.settleEntry(entry, blobOf("late"));
-    assert.match(await pending, /^blob:/);
+    assert.ok((await pending) instanceof Blob);
   });
 
   it("gives up on a frame that failed to encode, without losing its place", async () => {
@@ -109,58 +95,58 @@ describe("urlFor", () => {
     const bad = history.beginEntry(VIEW_STATE, SMALL);
     history.settleEntry(bad, null);
 
-    assert.equal(await history.urlFor(bad), null);
+    assert.equal(await history.blobFor(bad), null);
     assert.equal(history.length, 2, "the entry stays, so indices do not shift");
-    assert.match(await history.urlFor(good), /^blob:/);
+    assert.ok((await history.blobFor(good)) instanceof Blob);
   });
 
   it("resolves rather than hanging when the entry is released first", async () => {
     const history = new HistoryManager();
     const entry = history.beginEntry(VIEW_STATE, SMALL);
-    const pending = history.urlFor(entry);
+    const pending = history.blobFor(entry);
     history.releaseEntry(entry);
     assert.equal(await pending, null);
   });
 });
 
 describe("releasing", () => {
-  it("hands back the URL of an evicted entry", async () => {
+  it("drops the pixels of an evicted entry", async () => {
     const history = new HistoryManager({ maxHistorySize: 2 });
     const first = record(history);
-    const url = await history.urlFor(first);
     record(history);
     record(history);
 
     assert.equal(history.length, 2);
-    assert.ok(revoked.includes(url));
-    assert.equal(await history.urlFor(first), null);
+    assert.equal(first.released, true);
+    assert.equal(await history.blobFor(first), null);
   });
 
-  it("hands back the URLs of states a new edit made unreachable", async () => {
+  it("drops the pixels of states a new edit made unreachable", async () => {
     const history = new HistoryManager();
     record(history);
     const middle = record(history);
     const newest = record(history);
-    const middleUrl = await history.urlFor(middle);
-    const newestUrl = await history.urlFor(newest);
 
     history.undo();
     record(history);
 
-    assert.ok(revoked.includes(newestUrl), "the state that was ahead of the cursor");
-    assert.ok(!revoked.includes(middleUrl), "the one still behind it");
+    assert.equal(newest.released, true, "the state that was ahead of the cursor");
+    assert.equal(middle.released, false, "the one still behind it");
+    assert.ok((await history.blobFor(middle)) instanceof Blob);
   });
 
-  it("hands everything back on reset and on dispose", async () => {
+  it("drops everything on reset and on dispose", async () => {
     for (const method of ["reset", "dispose"]) {
-      revoked = [];
       const history = new HistoryManager();
-      const urls = [];
-      for (let i = 0; i < 3; i++) urls.push(await history.urlFor(record(history)));
+      const entries = [];
+      for (let i = 0; i < 3; i++) entries.push(record(history));
 
       history[method]();
 
-      for (const url of urls) assert.ok(revoked.includes(url), `${method} released ${url}`);
+      for (const entry of entries) {
+        assert.equal(entry.released, true, `${method} released it`);
+        assert.equal(entry.blob, null);
+      }
       assert.equal(history.length, 0);
       assert.equal(history.needsInitialSave, true);
     }
@@ -174,7 +160,7 @@ describe("releasing", () => {
     history.settleEntry(entry, blobOf("too late"));
 
     assert.equal(entry.blob, null);
-    assert.equal(await history.urlFor(entry), null);
+    assert.equal(await history.blobFor(entry), null);
   });
 });
 

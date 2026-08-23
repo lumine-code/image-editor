@@ -380,14 +380,39 @@ describe("image-editor", () => {
       expect(view.historyManager.length).toBe(before);
     });
 
+    it("keeps showing the frame it is on when the history is thrown away", async () => {
+      // A save resets the history while the image element is still pointed at
+      // whatever undo left on screen. When the history owned that URL, the
+      // reset revoked it out from under the view.
+      view.invertColors();
+      await pollUntil(() => view.historyManager.length === 2);
+      await pollUntil(() => view.historyManager.history.every((entry) => entry.settled));
+
+      await view.undo();
+      await pollUntil(() => view.refs.image.complete && view.refs.image.naturalWidth > 0);
+      const shown = view.refs.image.src;
+      expect(shown.startsWith("blob:")).toBe(true);
+
+      view.historyManager.reset();
+
+      // Still decodable: a fresh element loading the same URL must succeed.
+      const probe = new Image();
+      const loaded = await new Promise((resolve) => {
+        probe.onload = () => resolve(true);
+        probe.onerror = () => resolve(false);
+        probe.src = shown;
+      });
+      expect(loaded).toBe(true);
+    });
+
     it("releases every frame when the editor goes away", async () => {
       view.invertColors();
       await pollUntil(() => view.historyManager.length === 2);
       await pollUntil(() => view.historyManager.history.every((entry) => entry.settled));
 
       const entries = view.historyManager.history.slice();
-      await Promise.all(entries.map((entry) => view.historyManager.urlFor(entry)));
-      expect(entries.every((entry) => entry.url != null)).toBe(true);
+      const blobs = await Promise.all(entries.map((e) => view.historyManager.blobFor(e)));
+      expect(blobs.every((blob) => blob instanceof Blob)).toBe(true);
 
       item.destroy();
 
