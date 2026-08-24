@@ -98,7 +98,7 @@
          corner reads as one thick L, and a dark hairline outside the lot.
          Everything below positions against the padding box, which is the
          inner edge of that border. */
-      --selection-line: var(--text-color-info);
+      --selection-line: var(--accent-color);
       --selection-grip: 7px;
 
       position: absolute;
