@@ -1,6 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { FileState } = require("lumine");
 const ImageEditor = require("../lib/editor");
 
 // A 1x1 transparent PNG.
@@ -115,6 +116,64 @@ describe("image-editor", () => {
       expect(view.translateY).toBe(-25);
     }
 
+    it("publishes one exclusive file state through edits, conflicts, removal, and save", async () => {
+      const { item, view } = await openZoomedView();
+      const states = [];
+      item.onDidChangeFileState((fileState) => states.push(fileState));
+
+      expect(item.getFileState()).toBe(FileState.UNMODIFIED);
+      view.invertColors();
+      await pollUntil(() => item.getFileState() === FileState.MODIFIED);
+
+      item.noteExternalChange();
+      await view.updateImageURI();
+      expect(item.getFileState()).toBe(FileState.MODIFIED);
+
+      item.noteExternalChange();
+      item.confirmExternalChange();
+      expect(item.getFileState()).toBe(FileState.CONFLICTED);
+
+      fs.rmSync(tempPath);
+      item.file.emitter.emit("did-delete");
+      expect(item.getFileState()).toBe(FileState.REMOVED);
+      await view.undo();
+      await pollUntil(
+        () =>
+          view.refs.image.complete &&
+          view.refs.image.naturalWidth > 0 &&
+          !view.refs.loadingSpinner.classList.contains("visible"),
+      );
+      expect(item.getFileState()).toBe(FileState.REMOVED);
+
+      expect(await item.save()).toBe(true);
+      expect(item.getFileState()).toBe(FileState.UNMODIFIED);
+      expect(fs.existsSync(tempPath)).toBe(true);
+      expect(states).toEqual([
+        FileState.MODIFIED,
+        FileState.CONFLICTED,
+        FileState.REMOVED,
+        FileState.UNMODIFIED,
+      ]);
+    });
+
+    it("prompts for every non-unmodified state unless dirty prompts are disabled", async () => {
+      const { item, view } = await openZoomedView();
+      expect(item.shouldPromptToSave()).toBe(false);
+
+      view.invertColors();
+      await pollUntil(() => item.getFileState() === FileState.MODIFIED);
+      expect(item.shouldPromptToSave()).toBe(true);
+
+      item.noteExternalChange();
+      item.confirmExternalChange();
+      expect(item.shouldPromptToSave()).toBe(true);
+      item.setFileState(FileState.REMOVED);
+      expect(item.shouldPromptToSave()).toBe(true);
+
+      lumine.config.set("core.promptOnCloseDirtyBuffer", false);
+      expect(item.shouldPromptToSave()).toBe(false);
+    });
+
     it("does not reload the file it just wrote", async () => {
       const { item, view } = await openZoomedView();
       const src = view.refs.image.src;
@@ -187,7 +246,7 @@ describe("image-editor", () => {
       expect(editor.isTemporary()).toBe(true);
       expect(editor.getTitle()).toBe("Test Image");
       expect(editor.getDataUrl()).toBe(DATA_URL);
-      expect(editor.isModified()).toBe(true);
+      expect(editor.getFileState()).toBe(FileState.MODIFIED);
       expect(lumine.workspace.getActivePaneItem()).toBe(editor);
     });
   });
