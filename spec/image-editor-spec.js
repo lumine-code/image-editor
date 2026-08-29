@@ -81,6 +81,8 @@ describe("image-editor", () => {
   });
 
   describe("window surfaces", () => {
+    afterEach(() => workspaceElement.focus({ preventScroll: true }));
+
     it("rebinds canvas allocation, observers and pointer listeners in both directions", async () => {
       const item = await lumine.workspace.open(samplePath);
       const view = item.view;
