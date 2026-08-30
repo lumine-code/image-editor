@@ -21,7 +21,7 @@ describe("canvas filters", () => {
     // An unparsed filter string leaves the property at "none" and the draw
     // then quietly succeeds unblurred, so this has to be asked rather than
     // assumed.
-    expect(canvasFilters.supportsCanvasFilter(document)).toBe(true);
+    expect(canvasFilters.supportsCanvasFilter()).toBe(true);
   });
 
   describe("marginForSigma", () => {

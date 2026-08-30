@@ -81,223 +81,6 @@ describe("image-editor", () => {
     });
   });
 
-  describe("window surfaces", () => {
-    afterEach(() => workspaceElement.focus({ preventScroll: true }));
-
-    it("rebinds canvas allocation, observers and pointer listeners in both directions", async () => {
-      const item = await lumine.workspace.open(samplePath);
-      const view = item.view;
-      await pollUntil(() => view.loaded);
-      const originalParent = view.element.parentNode;
-      const frame = document.createElement("iframe");
-      jasmine.attachToDOM(frame);
-      spyOn(view.mouseHandler, "handleMouseMove");
-
-      const detach = await item.beginWindowSurfaceTransition();
-      frame.contentDocument.body.appendChild(view.element);
-      await detach.commit();
-      frame.contentWindow.dispatchEvent(
-        new frame.contentWindow.MouseEvent("mousemove", { clientX: 5, clientY: 7 }),
-      );
-
-      expect(view.element.ownerDocument).toBe(frame.contentDocument);
-      expect(view.canvasPool.document).toBe(frame.contentDocument);
-      expect(view.mouseHandler.handleMouseMove).toHaveBeenCalled();
-      view.showBrightnessContrastDialog();
-      expect(frame.contentDocument.querySelector(".image-editor-dialog-backdrop")).not.toBeNull();
-
-      view.mouseHandler.handleMouseMove.calls.reset();
-      const attach = await item.beginWindowSurfaceTransition();
-      expect(frame.contentDocument.querySelector(".image-editor-dialog-backdrop")).toBeNull();
-      originalParent.appendChild(view.element);
-      await attach.commit();
-      window.dispatchEvent(new MouseEvent("mousemove", { clientX: 8, clientY: 9 }));
-
-      expect(view.element.ownerDocument).toBe(document);
-      expect(view.canvasPool.document).toBe(document);
-      expect(view.mouseHandler.handleMouseMove).toHaveBeenCalled();
-
-      const failedDetach = await item.beginWindowSurfaceTransition();
-      frame.contentDocument.body.appendChild(view.element);
-      await failedDetach.commit();
-      view.updateTransform();
-      expect(view.transformRAFWindow).toBe(frame.contentWindow);
-      originalParent.appendChild(view.element);
-      await failedDetach.rollback();
-      view.updateTransform();
-      expect(view.transformRAFWindow).toBe(window);
-
-      item.destroy();
-      frame.remove();
-    });
-
-    it("restarts an unresolved navigation Image in the destination realm", async () => {
-      const item = await lumine.workspace.open(samplePath);
-      const view = item.view;
-      await pollUntil(() => view.loaded);
-      const originalParent = view.element.parentNode;
-      const frame = document.createElement("iframe");
-      jasmine.attachToDOM(frame);
-      const images = [];
-      spyOn(view, "createRealmImage").and.callFake((domWindow) => {
-        const image = {
-          domWindow,
-          naturalWidth: 16,
-          naturalHeight: 8,
-          onload: null,
-          onerror: null,
-          source: null,
-          set src(value) {
-            this.source = value;
-          },
-          get src() {
-            return this.source;
-          },
-        };
-        images.push(image);
-        return image;
-      });
-      spyOn(view, "applyImageWithMetadata").and.callThrough();
-
-      const navigation = view.loadImageFromNavigation(samplePath);
-      await pollUntil(() => images.length === 1);
-      const staleLoad = images[0].onload;
-      expect(images[0].domWindow).toBe(window);
-
-      const transition = await item.beginWindowSurfaceTransition();
-      frame.contentDocument.body.appendChild(view.element);
-      await transition.commit();
-
-      expect(images.length).toBe(2);
-      expect(images[1].domWindow).toBe(frame.contentWindow);
-      staleLoad();
-      expect(view.applyImageWithMetadata).not.toHaveBeenCalled();
-
-      images[1].onload();
-      await navigation;
-      expect(view.applyImageWithMetadata.calls.count()).toBe(1);
-      expect(view.applyImageWithMetadata.calls.mostRecent().args[1].img).toBe(images[1]);
-      expect(view.realmImageLoads.has("navigation")).toBe(false);
-      expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
-
-      const attach = await item.beginWindowSurfaceTransition();
-      originalParent.appendChild(view.element);
-      await attach.commit();
-      item.destroy();
-      frame.remove();
-    });
-
-    it("invalidates unresolved Image callbacks on transition and destroy", async () => {
-      const item = await lumine.workspace.open(samplePath);
-      const view = item.view;
-      await pollUntil(() => view.loaded);
-      const images = [];
-      spyOn(view, "createRealmImage").and.callFake(() => {
-        const image = {
-          naturalWidth: 8,
-          naturalHeight: 8,
-          onload: null,
-          onerror: null,
-          set src(value) {
-            this.source = value;
-          },
-        };
-        images.push(image);
-        return image;
-      });
-      spyOn(view, "commitCanvas");
-
-      const preview = view.applyRotatePreview(view.refs.image.src, 1, 1, 15, true);
-      const stalePreviewLoad = images[0].onload;
-      const transition = await item.beginWindowSurfaceTransition();
-      await transition.rollback();
-      stalePreviewLoad();
-      await preview;
-      expect(view.commitCanvas).not.toHaveBeenCalled();
-
-      const navigation = view.loadImageFromNavigation(samplePath);
-      await pollUntil(() => images.length === 2);
-      const staleNavigationLoad = images[1].onload;
-      spyOn(view, "applyImageWithMetadata");
-      item.destroy();
-      staleNavigationLoad();
-      await navigation;
-      expect(view.applyImageWithMetadata).not.toHaveBeenCalled();
-      expect(view.realmImageLoads.size).toBe(0);
-      expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
-    });
-
-    it("rebinds an unresolved display-image load after DOM adoption", async () => {
-      const item = await lumine.workspace.open(samplePath);
-      const view = item.view;
-      await pollUntil(() => view.loaded);
-      const originalParent = view.element.parentNode;
-      const frame = document.createElement("iframe");
-      jasmine.attachToDOM(frame);
-      spyOn(view, "setImageSource");
-      const didLoad = jasmine.createSpy("didLoad");
-      const load = view.startDisplayImageLoad({
-        source: "spec://unresolved-image",
-        purpose: "spec",
-        onLoad: didLoad,
-        onError: () => {},
-      });
-      const staleLoad = view.refs.image.onload;
-
-      const transition = await item.beginWindowSurfaceTransition();
-      frame.contentDocument.body.appendChild(view.element);
-      await transition.commit();
-      const destinationLoad = view.refs.image.onload;
-
-      expect(view.setImageSource.calls.count()).toBe(2);
-      staleLoad();
-      expect(didLoad).not.toHaveBeenCalled();
-      destinationLoad();
-      await load;
-      expect(didLoad.calls.count()).toBe(1);
-      expect(view.displayImageLoad).toBeNull();
-
-      const attach = await item.beginWindowSurfaceTransition();
-      originalParent.appendChild(view.element);
-      await attach.commit();
-      item.destroy();
-      frame.remove();
-    });
-
-    it("drops a preview encode that completes after its transition token", async () => {
-      const item = await lumine.workspace.open(samplePath);
-      const view = item.view;
-      await pollUntil(() => view.loaded);
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = 1;
-      let completeEncode;
-      canvas.toBlob = (callback) => {
-        completeEncode = callback;
-      };
-      const releaseCanvas = jasmine.createSpy("releaseCanvas");
-      const cancelled = jasmine.createSpy("cancelled");
-      spyOn(view, "startDisplayImageLoad");
-      const generation = ++view.rotatePreviewGeneration;
-      view.commitCanvas(canvas, {
-        recordHistory: false,
-        spinner: false,
-        purpose: "rotate-preview",
-        isCurrent: () => generation === view.rotatePreviewGeneration,
-        releaseCanvas,
-        onCancel: cancelled,
-      });
-
-      const transition = await item.beginWindowSurfaceTransition();
-      completeEncode(new Blob(["preview"], { type: "image/png" }));
-      await transition.rollback();
-
-      expect(releaseCanvas.calls.count()).toBe(1);
-      expect(cancelled.calls.count()).toBe(1);
-      expect(view.startDisplayImageLoad).not.toHaveBeenCalled();
-      item.destroy();
-    });
-  });
-
   describe("saving", () => {
     let tempDir, tempPath;
 
@@ -840,8 +623,8 @@ describe("image-editor", () => {
     });
   });
 
-  describe("item-owned native dialogs", () => {
-    let item, view, asked, owners, answer;
+  describe("moving off unsaved edits", () => {
+    let item, view, asked, answer, realConfirm;
 
     beforeEach(async () => {
       item = await lumine.workspace.open(samplePath);
@@ -850,16 +633,16 @@ describe("image-editor", () => {
       // The initial frame is wanted here: modified means there is a state to
       // go back to, which takes two.
       asked = [];
-      owners = [];
       answer = 1;
-      spyOn(lumine.workspace, "confirmForPaneItem").and.callFake((owner, options) => {
-        owners.push(owner);
+      realConfirm = lumine.window.confirm;
+      lumine.window.confirm = (options) => {
         asked.push(options);
         return Promise.resolve(answer);
-      });
+      };
     });
 
     afterEach(() => {
+      lumine.window.confirm = realConfirm;
       for (const paneItem of lumine.workspace.getPaneItems()) {
         if (paneItem instanceof ImageEditor) paneItem.destroy();
       }
@@ -890,7 +673,6 @@ describe("image-editor", () => {
       await view.nextImage();
 
       expect(asked.length).toBe(1);
-      expect(owners).toEqual([item]);
       expect(asked[0].buttons).toEqual(["Save", "Cancel", "Don't Save"]);
       expect(view.editor.getPath()).toBe(before);
       expect(view.isModified()).toBe(true);
@@ -917,19 +699,6 @@ describe("image-editor", () => {
       await view.previousImage();
 
       expect(asked.length).toBe(2);
-      expect(owners).toEqual([item, item]);
-    });
-
-    it("owns Save As with the image item and settles cancellation", async () => {
-      const choosePath = spyOn(lumine.workspace, "showSaveDialogForPaneItem").and.returnValue(
-        Promise.resolve({ canceled: true }),
-      );
-
-      expect(await view.saveImage()).toBe(false);
-      expect(choosePath.calls.mostRecent().args[0]).toBe(item);
-      expect(choosePath.calls.mostRecent().args[1]).toEqual(
-        jasmine.objectContaining({ defaultPath: item.getPath() }),
-      );
     });
   });
 
