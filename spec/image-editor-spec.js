@@ -29,6 +29,7 @@ function pollUntil(condition, timeoutMs = 15000) {
 describe("image-editor", () => {
   let workspaceElement, mainModule;
   const samplePath = path.join(__dirname, "fixtures", "sample.png");
+  const otherPath = path.join(__dirname, "fixtures", "other.png");
 
   beforeEach(async () => {
     workspaceElement = lumine.views.getView(lumine.workspace);
@@ -504,6 +505,23 @@ describe("image-editor", () => {
       expect(current.text).toBe("sample.png");
 
       disposable.dispose();
+    });
+
+    it("activates the image item through the workspace before navigating it", async () => {
+      const adapter = mainModule.provideNavigationAdapter();
+      const item = await lumine.workspace.open(samplePath);
+      const open = spyOn(lumine.workspace, "open").and.callThrough();
+      const navigate = spyOn(item.view, "loadImageFromNavigation").and.returnValue(
+        Promise.resolve(),
+      );
+      const element = lumine.views.getView(item);
+      const focus = spyOn(element, "focus");
+
+      await adapter.navigateTo(item, { filePath: otherPath });
+
+      expect(open).toHaveBeenCalledWith(item, { searchAllPanes: true });
+      expect(navigate).toHaveBeenCalledWith(otherPath);
+      expect(focus).toHaveBeenCalled();
     });
   });
 
