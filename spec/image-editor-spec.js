@@ -822,8 +822,8 @@ describe("image-editor", () => {
     });
   });
 
-  describe("moving off unsaved edits", () => {
-    let item, view, asked, answer, realConfirm;
+  describe("item-owned native dialogs", () => {
+    let item, view, asked, owners, answer;
 
     beforeEach(async () => {
       item = await lumine.workspace.open(samplePath);
@@ -832,16 +832,16 @@ describe("image-editor", () => {
       // The initial frame is wanted here: modified means there is a state to
       // go back to, which takes two.
       asked = [];
+      owners = [];
       answer = 1;
-      realConfirm = lumine.window.confirm;
-      lumine.window.confirm = (options) => {
+      spyOn(lumine.workspace, "confirmForPaneItem").and.callFake((owner, options) => {
+        owners.push(owner);
         asked.push(options);
         return Promise.resolve(answer);
-      };
+      });
     });
 
     afterEach(() => {
-      lumine.window.confirm = realConfirm;
       for (const paneItem of lumine.workspace.getPaneItems()) {
         if (paneItem instanceof ImageEditor) paneItem.destroy();
       }
@@ -872,6 +872,7 @@ describe("image-editor", () => {
       await view.nextImage();
 
       expect(asked.length).toBe(1);
+      expect(owners).toEqual([item]);
       expect(asked[0].buttons).toEqual(["Save", "Cancel", "Don't Save"]);
       expect(view.editor.getPath()).toBe(before);
       expect(view.isModified()).toBe(true);
@@ -898,6 +899,19 @@ describe("image-editor", () => {
       await view.previousImage();
 
       expect(asked.length).toBe(2);
+      expect(owners).toEqual([item, item]);
+    });
+
+    it("owns Save As with the image item and settles cancellation", async () => {
+      const choosePath = spyOn(lumine.workspace, "showSaveDialogForPaneItem").and.returnValue(
+        Promise.resolve({ canceled: true }),
+      );
+
+      expect(await view.saveImage()).toBe(false);
+      expect(choosePath.calls.mostRecent().args[0]).toBe(item);
+      expect(choosePath.calls.mostRecent().args[1]).toEqual(
+        jasmine.objectContaining({ defaultPath: item.getPath() }),
+      );
     });
   });
 
