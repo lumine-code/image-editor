@@ -454,17 +454,29 @@ describe("image-editor", () => {
   });
 
   describe("provided image-editor service", () => {
-    it("exposes openFromDataUrl and opens a temporary editor", () => {
+    it("opens temporary editors through the workspace", async () => {
       const service = mainModule.provideImageEditor();
       expect(typeof service.openFromDataUrl).toBe("function");
+      const open = spyOn(lumine.workspace, "open").and.callThrough();
 
-      const editor = service.openFromDataUrl(DATA_URL, "Test Image");
+      const editor = await service.openFromDataUrl(DATA_URL, "Test Image");
       expect(editor instanceof ImageEditor).toBe(true);
       expect(editor.isTemporary()).toBe(true);
       expect(editor.getTitle()).toBe("Test Image");
       expect(editor.getDataUrl()).toBe(DATA_URL);
       expect(editor.getFileState()).toBe(FileState.MODIFIED);
       expect(lumine.workspace.getActivePaneItem()).toBe(editor);
+      expect(open).toHaveBeenCalledWith(editor);
+    });
+
+    it("opens explicitly selected files through the workspace", async () => {
+      const open = spyOn(lumine.workspace, "open").and.callThrough();
+
+      const editor = await mainModule.openInImageEditor(samplePath);
+
+      expect(editor instanceof ImageEditor).toBe(true);
+      expect(editor.getPath()).toBe(samplePath);
+      expect(open).toHaveBeenCalledWith(editor);
     });
   });
 
