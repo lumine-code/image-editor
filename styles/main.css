@@ -510,7 +510,7 @@
 }
 
 .status-bar .status-image.active {
-  cursor: pointer;
+  cursor: default;
 
   &:hover {
     color: var(--text-color-highlight);
