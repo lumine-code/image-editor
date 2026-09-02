@@ -44,12 +44,14 @@ describe("normalizePathKey", () => {
     assert.equal(paths.normalizePathKey("C:/Data/A.PNG"), paths.normalizePathKey("C:/data/a.png"));
   });
 
-  it("folds separators on Windows", { skip: path.sep !== "\\" }, () => {
-    assert.equal(
-      paths.normalizePathKey("C:/Data/Photos/a.png"),
-      paths.normalizePathKey("C:\\Data\\Photos\\a.png"),
-    );
-  });
+  if (path.sep === "\\") {
+    it("folds separators on Windows", () => {
+      assert.equal(
+        paths.normalizePathKey("C:/Data/Photos/a.png"),
+        paths.normalizePathKey("C:\\Data\\Photos\\a.png"),
+      );
+    });
+  }
 
   it("resolves . and .. segments", () => {
     assert.equal(
