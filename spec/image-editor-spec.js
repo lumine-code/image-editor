@@ -95,7 +95,15 @@ describe("image-editor", () => {
       for (const item of lumine.workspace.getPaneItems()) {
         if (item instanceof ImageEditor) item.destroy();
       }
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      // Windows can deliver the final watcher/image-decoder cleanup just after
+      // destroy returns. Let Node retry the documented transient filesystem
+      // errors instead of racing that last handle once.
+      fs.rmSync(tempDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 100,
+      });
     });
 
     async function openZoomedView() {
