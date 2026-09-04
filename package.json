@@ -130,12 +130,6 @@
       "maximum": 500,
       "default": 50
     },
-    "showSuccessMessages": {
-      "title": "Show Success Messages",
-      "description": "Show success notifications after operations like crop, transform, save, etc.",
-      "type": "boolean",
-      "default": true
-    },
     "switchZoomAndNavigation": {
       "title": "Switch Zoom and Navigation",
       "description": "When enabled, scroll wheel navigates and Ctrl+scroll zooms. When disabled, scroll wheel zooms and Ctrl+scroll navigates.",
