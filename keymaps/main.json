@@ -12,6 +12,7 @@
     "b": "image-editor:blur-medium",
     "s": "image-editor:sharpen-medium",
     "x": "image-editor:crop-to-selection",
+    "shift-x": "image-editor:resize-canvas-to-selection",
     "]": "image-editor:rotate-90-cw",
     "[": "image-editor:rotate-90-ccw",
     "h": "image-editor:flip-horizontal",

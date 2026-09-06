@@ -11,7 +11,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 - **Transform tools**: rotate, flip, resize, and crop images.
 - **Color adjustments**: brightness, contrast, saturation, hue, and auto-adjust.
 - **Filters**: blur, sharpen, grayscale, sepia, posterize, and invert.
-- **Selection tools**: create, resize, auto-select, and crop to selection.
+- **Selection tools**: create, resize, auto-select, crop, and extend the canvas to a selection.
 - **SVG support**: view SVG images with automatic viewBox dimension handling (read-only).
 - **Undo/redo**: full history with viewport preservation.
 - **Navigation panel**: browse folder images via [navigation-panel](https://github.com/lumine-code/navigation-panel).
@@ -72,6 +72,7 @@ Commands available in `.image-editor`:
 - `image-editor:copy-path`: copy absolute image path to clipboard,
 - `image-editor:copy-project-path`: copy project-relative image path to clipboard,
 - `image-editor:crop-to-selection`: crop to selection,
+- `image-editor:resize-canvas-to-selection`: resize the canvas to the selection, extending transparent space beyond the image,
 - `image-editor:hide-selection`: clear selection,
 - `image-editor:show-properties`: view file and image info,
 - `image-editor:undo`: revert to previous state,

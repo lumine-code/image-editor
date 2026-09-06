@@ -186,6 +186,10 @@
             "command": "image-editor:crop-to-selection"
           },
           {
+            "label": "Resize Canvas to Selection",
+            "command": "image-editor:resize-canvas-to-selection"
+          },
+          {
             "label": "Zoom to Selection",
             "command": "image-editor:zoom-to-selection"
           }

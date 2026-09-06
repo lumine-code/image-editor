@@ -456,6 +456,41 @@ describe("image-editor", () => {
       }
     });
 
+    it("resizes the canvas to an out-of-bounds selection with transparent padding", async () => {
+      const before = currentPixels().split(",").map(Number);
+      const oldTranslateX = view.translateX;
+      const oldTranslateY = view.translateY;
+
+      view.historyManager.reset();
+      view.historyManager.needsInitialSave = false;
+      view.setSelectionVisibility(true);
+      view.selectionStartImg = { x: -1, y: -1 };
+      view.selectionEndImg = { x: 3, y: 3 };
+      view.resizeCanvasToSelection();
+
+      await pollUntil(
+        () =>
+          view.refs.image.complete &&
+          view.refs.image.naturalWidth === 4 &&
+          view.refs.image.naturalHeight === 4,
+      );
+      await pollUntil(() => view.refs.selectionBox.style.display === "none");
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 4;
+      canvas.height = 4;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(view.refs.image, 0, 0);
+      const after = Array.from(ctx.getImageData(0, 0, 4, 4).data);
+
+      expect(after.slice(0, 4)).toEqual([0, 0, 0, 0]);
+      expect(after.slice(20, 24)).toEqual(before.slice(0, 4));
+      expect(after.slice(60, 64)).toEqual([0, 0, 0, 0]);
+      expect(view.translateX).toBe(oldTranslateX - view.zoom);
+      expect(view.translateY).toBe(oldTranslateY - view.zoom);
+      expect(view.historyManager.length).toBe(1);
+    });
+
     it("keeps the pool stocked instead of dropping what it borrows", async () => {
       // Six of the edit paths never gave their canvases back, so the pool was
       // always empty and every operation allocated afresh.
