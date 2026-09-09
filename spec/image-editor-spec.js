@@ -90,20 +90,12 @@ describe("image-editor", () => {
       fs.copyFileSync(samplePath, tempPath);
     });
 
-    afterEach(() => {
-      // Close the editor before the file goes away, so its watcher stops first.
+    afterEach(async () => {
       for (const item of lumine.workspace.getPaneItems()) {
         if (item instanceof ImageEditor) item.destroy();
       }
-      // Windows can deliver the final watcher/image-decoder cleanup just after
-      // destroy returns. Let Node retry the documented transient filesystem
-      // errors instead of racing that last handle once.
-      fs.rmSync(tempDir, {
-        recursive: true,
-        force: true,
-        maxRetries: 10,
-        retryDelay: 100,
-      });
+      await lumine.fileWatchClient.settlePendingTeardown();
+      fs.rmSync(tempDir, { recursive: true, force: true });
     });
 
     async function openZoomedView() {
