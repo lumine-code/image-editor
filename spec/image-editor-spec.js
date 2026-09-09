@@ -143,7 +143,7 @@ describe("image-editor", () => {
       expect(item.getFileState()).toBe(FileState.CONFLICTED);
 
       fs.rmSync(tempPath);
-      item.file.emitter.emit("did-delete");
+      item.reconcileFile();
       expect(item.getFileState()).toBe(FileState.REMOVED);
       await view.undo();
       await pollUntil(
