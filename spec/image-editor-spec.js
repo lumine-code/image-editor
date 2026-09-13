@@ -906,10 +906,13 @@ describe("image-editor", () => {
     it("hands back every blob URL it still owns when the view goes away", async () => {
       const shown = await showAFreshBlob();
       const held = URL.createObjectURL(new Blob(["x"]));
+      const load = view.loadingAbortController;
       view.pinImageUrl(held);
 
       view.editor.destroy();
 
+      expect(load.cancelled).toBe(true);
+      expect(view.refs.image.hasAttribute("src")).toBe(false);
       expect(revoked).toContain(shown);
       expect(revoked).toContain(held);
       expect(minted.every((url) => revoked.includes(url))).toBe(true);
