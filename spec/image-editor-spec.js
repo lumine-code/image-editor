@@ -2,7 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { FileState } = require("lumine");
-const ImageEditor = require("../lib/editor");
+let ImageEditor;
 
 // A 1x1 transparent PNG.
 const DATA_URL =
@@ -36,6 +36,7 @@ describe("image-editor", () => {
     jasmine.attachToDOM(workspaceElement);
     const pkg = await lumine.packages.activatePackage("image-editor");
     mainModule = pkg.mainModule;
+    ImageEditor = require("../lib/editor");
   });
 
   describe("opener", () => {
@@ -51,6 +52,15 @@ describe("image-editor", () => {
       const item = await lumine.workspace.open(path.join(__dirname, "image-editor-spec.js"));
       expect(item instanceof ImageEditor).toBe(false);
       expect(lumine.workspace.isTextEditor(item)).toBe(true);
+    });
+
+    it("closes image items before the package is deactivated", async () => {
+      const item = await lumine.workspace.open(samplePath);
+
+      await lumine.packages.deactivatePackage("image-editor");
+
+      expect(lumine.workspace.paneForItem(item)).toBeUndefined();
+      expect(item.destroyed).toBe(true);
     });
   });
 
