@@ -64,6 +64,32 @@ describe("image-editor", () => {
     });
   });
 
+  describe("status bar", () => {
+    it("hides the whole tile while a non-text center item is active", async () => {
+      const image = await lumine.workspace.open(samplePath);
+      const ImageEditorStatusView = require("../lib/status");
+      const statusView = new ImageEditorStatusView({
+        addLeftTile: () => ({ destroy() {} }),
+      });
+      statusView.attach();
+
+      expect(statusView.element.style.display).toBe("");
+
+      const pane = lumine.workspace.getCenter().getActivePane();
+      const otherItem = document.createElement("div");
+      pane.addItem(otherItem);
+      pane.activateItem(otherItem);
+
+      expect(statusView.element.style.display).toBe("none");
+
+      pane.activateItem(image);
+      expect(statusView.element.style.display).toBe("");
+
+      statusView.destroy();
+      await pane.destroyItem(otherItem);
+    });
+  });
+
   describe("serialization", () => {
     it("round-trips through serialize/deserialize", async () => {
       const item = await lumine.workspace.open(samplePath);
