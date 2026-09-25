@@ -20,9 +20,6 @@
   "engines": {
     "lumine": "^1.0.0"
   },
-  "backgroundTips": [
-    "In the image editor you can crop the picture to the current selection with {{ 'image-editor:crop-to-selection' | keystroke }}"
-  ],
   "main": "./lib/main",
   "files": [
     "assets",
@@ -40,17 +37,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "dependencies": {
-    "@lumine-code/etch": "github:lumine-code/etch#e2736a828e195b7f4878224c03391244c7404ee6"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.9.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-n": "^18.3.0",
-    "globals": "^17.11.0",
-    "prettier": "^3.9.6"
-  },
   "providedServices": {
     "image-editor": {
       "versions": {
@@ -61,7 +47,23 @@
       "versions": {
         "1.0.0": "provideNavigationAdapter"
       }
+    },
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
     }
+  },
+  "dependencies": {
+    "@lumine-code/etch": "github:lumine-code/etch#e2736a828e195b7f4878224c03391244c7404ee6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.3.0",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6"
   },
   "consumedServices": {
     "status-bar": {
