@@ -1,7 +1,6 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { FileState } = require("lumine");
 let ImageEditor;
 
 // A 1x1 transparent PNG.
@@ -158,21 +157,21 @@ describe("image-editor", () => {
       const states = [];
       item.onDidChangeFileState((fileState) => states.push(fileState));
 
-      expect(item.getFileState()).toBe(FileState.UNMODIFIED);
+      expect(item.getFileState()).toBe("unmodified");
       view.invertColors();
-      await pollUntil(() => item.getFileState() === FileState.MODIFIED);
+      await pollUntil(() => item.getFileState() === "modified");
 
       item.noteExternalChange();
       await view.updateImageURI();
-      expect(item.getFileState()).toBe(FileState.MODIFIED);
+      expect(item.getFileState()).toBe("modified");
 
       item.noteExternalChange();
       item.confirmExternalChange();
-      expect(item.getFileState()).toBe(FileState.CONFLICTED);
+      expect(item.getFileState()).toBe("conflicted");
 
       fs.rmSync(tempPath);
       item.reconcileFile();
-      expect(item.getFileState()).toBe(FileState.REMOVED);
+      expect(item.getFileState()).toBe("removed");
       await view.undo();
       await pollUntil(
         () =>
@@ -180,17 +179,12 @@ describe("image-editor", () => {
           view.refs.image.naturalWidth > 0 &&
           !view.refs.loadingSpinner.classList.contains("visible"),
       );
-      expect(item.getFileState()).toBe(FileState.REMOVED);
+      expect(item.getFileState()).toBe("removed");
 
       expect(await item.save()).toBe(true);
-      expect(item.getFileState()).toBe(FileState.UNMODIFIED);
+      expect(item.getFileState()).toBe("unmodified");
       expect(fs.existsSync(tempPath)).toBe(true);
-      expect(states).toEqual([
-        FileState.MODIFIED,
-        FileState.CONFLICTED,
-        FileState.REMOVED,
-        FileState.UNMODIFIED,
-      ]);
+      expect(states).toEqual(["modified", "conflicted", "removed", "unmodified"]);
     });
 
     it("prompts for every non-unmodified state unless dirty prompts are disabled", async () => {
@@ -198,13 +192,13 @@ describe("image-editor", () => {
       expect(item.shouldPromptToSave()).toBe(false);
 
       view.invertColors();
-      await pollUntil(() => item.getFileState() === FileState.MODIFIED);
+      await pollUntil(() => item.getFileState() === "modified");
       expect(item.shouldPromptToSave()).toBe(true);
 
       item.noteExternalChange();
       item.confirmExternalChange();
       expect(item.shouldPromptToSave()).toBe(true);
-      item.setFileState(FileState.REMOVED);
+      item.setFileState("removed");
       expect(item.shouldPromptToSave()).toBe(true);
 
       lumine.config.set("core.promptOnCloseDirtyBuffer", false);
@@ -284,7 +278,7 @@ describe("image-editor", () => {
       expect(editor.isTemporary()).toBe(true);
       expect(editor.getTitle()).toBe("Test Image");
       expect(editor.getDataUrl()).toBe(DATA_URL);
-      expect(editor.getFileState()).toBe(FileState.MODIFIED);
+      expect(editor.getFileState()).toBe("modified");
       expect(lumine.workspace.getActivePaneItem()).toBe(editor);
       expect(open).toHaveBeenCalledWith(editor);
     });
