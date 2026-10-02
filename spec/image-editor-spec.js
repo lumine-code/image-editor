@@ -126,15 +126,22 @@ describe("image-editor", () => {
     });
 
     afterEach(async () => {
+      const files = [];
       for (const item of lumine.workspace.getPaneItems()) {
-        if (item instanceof ImageEditor) item.destroy();
+        if (item instanceof ImageEditor) {
+          if (item.file) files.push(item.file);
+          item.destroy();
+        }
       }
+      await Promise.all(files.map((file) => file.closed));
+      await lumine.packages.deactivatePackage("image-editor");
       await lumine.fileWatchClient.settlePendingTeardown();
       fs.rmSync(tempDir, { recursive: true, force: true });
     });
 
     async function openZoomedView() {
       const item = await lumine.workspace.open(tempPath);
+      await item.file.ready;
       const view = item.view;
       await pollUntil(() => view.loaded);
       // The spec workspace has no height, so zoom is set the way a manual zoom
