@@ -440,6 +440,66 @@ describe("image-editor pending reuse", () => {
     expect(view.historyManager.length).toBe(2);
   });
 
+  it("finishes the requested replacement when the old source asks for a watcher reload", async () => {
+    const decode = view._decodeImage.bind(view);
+    let entered = false,
+      release;
+    const held = new Promise((resolve) => (release = resolve));
+    spyOn(view, "_decodeImage").and.callFake(async (...args) => {
+      const image = await decode(...args);
+      entered = true;
+      await held;
+      return image;
+    });
+    const opening = lumine.workspace.open(otherPath, { pending: true }).catch((error) => error);
+    await pollUntil(() => entered);
+    await view.updateImageURI();
+    release();
+    const result = await opening;
+
+    expect(result).toBe(item);
+    expect(item.getPath()).toBe(otherPath);
+    expect(view.shownFile.path).toBe(otherPath);
+  });
+
+  it("reconciles a deferred watcher reload when replacement fails", async () => {
+    const stat = fs.promises.stat.bind(fs.promises);
+    const previousRevision = fs.statSync(samplePath).mtimeMs;
+    spyOn(fs.promises, "stat").and.callFake(async (filePath) => {
+      const stats = await stat(filePath);
+      if (filePath === samplePath) stats.mtimeMs = previousRevision + 1000;
+      return stats;
+    });
+    const decode = view._decodeImage.bind(view);
+    let entered = false,
+      release,
+      sourceDecodes = 0;
+    const held = new Promise((resolve) => (release = resolve));
+    const error = new Error("The replacement failed to decode");
+    spyOn(view, "_decodeImage").and.callFake(async (...args) => {
+      if (args[0].includes("other.png")) {
+        entered = true;
+        await held;
+        throw error;
+      }
+      sourceDecodes++;
+      return decode(...args);
+    });
+    const opening = lumine.workspace.open(otherPath, { pending: true }).catch((failure) => failure);
+    await pollUntil(() => entered);
+    await view.updateImageURI();
+    expect(sourceDecodes).toBe(0);
+    release();
+    const result = await opening;
+
+    expect(result).toBe(error);
+    expect(item.getPath()).toBe(samplePath);
+    expect(view.shownFile.path).toBe(samplePath);
+    expect(view.shownFile.mtimeMs).toBe(previousRevision + 1000);
+    expect(sourceDecodes).toBe(1);
+    expect(view.refs.loadingSpinner.classList.contains("visible")).toBe(false);
+  });
+
   it("publishes URI changes when the existing file is relocated", async () => {
     const changes = [];
     item.onDidChangeURI((event) => changes.push(event));
