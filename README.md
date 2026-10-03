@@ -17,6 +17,8 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 - **Navigation panel**: browse folder images via [navigation-panel](https://github.com/lumine-code/navigation-panel).
 - **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jupyter-repl](https://github.com/lumine-code/jupyter-repl) to display plot outputs.
 
+Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes.
+
 ## Installation
 
 To install `image-editor` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/image-editor`.
