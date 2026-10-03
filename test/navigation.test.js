@@ -151,6 +151,69 @@ describe("getFileList", () => {
     assert.equal((await navigator.getFileList(path.join(dir, "c.png"))).currentIndex, 2);
     assert.equal((await navigator.getFileList(path.join(dir, "b.png"))).currentIndex, 1);
   });
+
+  it("keeps the latest directory cached when an older read finishes later", async () => {
+    const navigator = new ImageNavigator();
+    const directoryA = path.join(dir, "A");
+    const directoryB = path.join(dir, "B");
+    const real = fs.promises.readdir;
+    let finishA, finishB;
+    fs.promises.readdir = (directory) =>
+      new Promise((resolve) => {
+        if (directory === directoryA) finishA = resolve;
+        else finishB = resolve;
+      });
+    try {
+      const readingA = navigator.getFileList(path.join(directoryA, "a.png"));
+      const readingB = navigator.getFileList(path.join(directoryB, "b.png"));
+      finishB(["b.png", "c.png"]);
+      const listB = await readingB;
+      finishA(["a.png"]);
+      const listA = await readingA;
+
+      assert.equal(navigator.fileListCache.directory, directoryB);
+      assert.deepEqual(listB.files, [
+        path.join(directoryB, "b.png"),
+        path.join(directoryB, "c.png"),
+      ]);
+      assert.equal(listB.currentIndex, 0);
+      assert.deepEqual(listA.files, [path.join(directoryA, "a.png")]);
+    } finally {
+      fs.promises.readdir = real;
+    }
+  });
+
+  it("keeps each returned listing stable across cached lookups and invalidation", async () => {
+    makeFiles(["a.png", "b.png"]);
+    const navigator = new ImageNavigator();
+    const listA = await navigator.getFileList(path.join(dir, "a.png"));
+    const listB = await navigator.getFileList(path.join(dir, "b.png"));
+    navigator.invalidateCache();
+
+    assert.equal(listA.currentIndex, 0);
+    assert.equal(listB.currentIndex, 1);
+    assert.deepEqual(listA.files, [path.join(dir, "a.png"), path.join(dir, "b.png")]);
+    assert.deepEqual(listB.files, listA.files);
+  });
+
+  it("keeps an in-flight read from restoring an invalidated cache", async () => {
+    const navigator = new ImageNavigator();
+    const real = fs.promises.readdir;
+    let finish;
+    fs.promises.readdir = () => new Promise((resolve) => (finish = resolve));
+    try {
+      const reading = navigator.getFileList(path.join(dir, "a.png"));
+      navigator.invalidateCache();
+      finish(["a.png"]);
+      const list = await reading;
+
+      assert.deepEqual(list.files, [path.join(dir, "a.png")]);
+      assert.equal(navigator.fileListCache.directory, null);
+      assert.equal(navigator.fileListCache.files.length, 0);
+    } finally {
+      fs.promises.readdir = real;
+    }
+  });
 });
 
 describe("getAdjacentImage and friends", () => {

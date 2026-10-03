@@ -508,6 +508,133 @@ describe("image-editor pending reuse", () => {
     expect(view.shownFile.path).toBe(otherPath);
   });
 
+  it("keeps navigation headers on the reused resource after an old directory read finishes", async () => {
+    const main = lumine.packages.getActivePackage("image-editor").mainModule;
+    const readings = [];
+    spyOn(view, "getFileList").and.callFake(() => new Promise((resolve) => readings.push(resolve)));
+    const headers = [];
+    const observer = main
+      .provideNavigationAdapter()
+      .observeHeaders(item, (list) => headers.push(list));
+    await lumine.workspace.open(otherPath, { pending: true });
+    await pollUntil(() => readings.length >= 2);
+    const currentListing = { files: [otherPath], currentIndex: 0 };
+    for (const complete of readings.slice(1)) complete(currentListing);
+    await pollUntil(() => headers.length > 0);
+    readings[0]({ files: [samplePath], currentIndex: 0 });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(headers[headers.length - 1][0].filePath).toBe(otherPath);
+    expect(item._navigationHeaders[0].filePath).toBe(otherPath);
+    observer.dispose();
+  });
+
+  it("keeps the newest navigation refresh when its URI has not changed", async () => {
+    const main = lumine.packages.getActivePackage("image-editor").mainModule;
+    const readings = [];
+    spyOn(view, "getFileList").and.callFake(() => new Promise((resolve) => readings.push(resolve)));
+    const headers = [];
+    const observer = main
+      .provideNavigationAdapter()
+      .observeHeaders(item, (list) => headers.push(list));
+    item.emitter.emit("did-change");
+    readings[1]({ files: [otherPath, samplePath], currentIndex: 1 });
+    await pollUntil(() => headers.length > 0);
+    readings[0]({ files: [samplePath], currentIndex: 0 });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(headers.length).toBe(1);
+    expect(item._navigationHeaders.map((header) => header.filePath)).toEqual([
+      otherPath,
+      samplePath,
+    ]);
+    observer.dispose();
+  });
+
+  for (const stop of ["dispose", "destroy"]) {
+    it(`does not publish a navigation result after observer ${stop}`, async () => {
+      const main = lumine.packages.getActivePackage("image-editor").mainModule;
+      let finish;
+      spyOn(view, "getFileList").and.returnValue(new Promise((resolve) => (finish = resolve)));
+      const callback = jasmine.createSpy("headers");
+      const observer = main.provideNavigationAdapter().observeHeaders(item, callback);
+      if (stop === "dispose") observer.dispose();
+      else item.destroy();
+      finish({ files: [samplePath], currentIndex: 0 });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(callback).not.toHaveBeenCalled();
+      expect(item._navigationHeaders).toBe(null);
+      observer.dispose();
+    });
+  }
+
+  it("refreshes navigation headers once when the resource path is relocated", async () => {
+    const main = lumine.packages.getActivePackage("image-editor").mainModule;
+    const getFileList = spyOn(view, "getFileList").and.callFake(() =>
+      Promise.resolve({ files: [item.getPath()], currentIndex: 0 }),
+    );
+    let headers;
+    const observer = main
+      .provideNavigationAdapter()
+      .observeHeaders(item, (list) => (headers = list));
+    await pollUntil(() => headers != null);
+    item.setPath(otherPath);
+    await pollUntil(() => headers[0].filePath === otherPath);
+
+    expect(getFileList).toHaveBeenCalledTimes(2);
+    observer.dispose();
+  });
+
+  it("does not navigate a reused resource using a directory result from its previous file", async () => {
+    let finish;
+    spyOn(view.navigator, "getFirstImage").and.returnValue(
+      new Promise((resolve) => (finish = resolve)),
+    );
+    const navigation = view.firstImage();
+    await lumine.workspace.open(otherPath, { pending: true });
+    finish(samplePath);
+    await navigation;
+
+    expect(item.getPath()).toBe(otherPath);
+    expect(view.shownFile.path).toBe(otherPath);
+  });
+
+  it("keeps an old directory result from cancelling a newer replacement before it commits", async () => {
+    let finishListing;
+    spyOn(view.navigator, "getFirstImage").and.returnValue(
+      new Promise((resolve) => (finishListing = resolve)),
+    );
+    const navigation = view.firstImage();
+    const decode = view._decodeImage.bind(view);
+    let entered = false,
+      finishDecode;
+    const held = new Promise((resolve) => (finishDecode = resolve));
+    spyOn(view, "_decodeImage").and.callFake(async (...args) => {
+      const image = await decode(...args);
+      entered = true;
+      await held;
+      return image;
+    });
+    const load = spyOn(view, "loadImageFromNavigation").and.callThrough();
+    const opening = lumine.workspace.open(otherPath, { pending: true }).catch((error) => error);
+    await pollUntil(() => entered);
+    expect(item.getPath()).toBe(samplePath);
+    finishListing(otherPath);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(load).toHaveBeenCalledTimes(1);
+    finishDecode();
+    const [result] = await Promise.all([opening, navigation]);
+
+    expect(result).toBe(item);
+    expect(item.getPath()).toBe(otherPath);
+    expect(view.shownFile.path).toBe(otherPath);
+  });
+
   it("terminates pending state in its own pane while another pane is active", () => {
     const ownPane = lumine.workspace.paneForItem(item);
     ownPane.splitRight({ items: [document.createElement("div")], activate: true });
