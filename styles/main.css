@@ -1,5 +1,5 @@
 .image-editor {
-  --spacing: calc(var(--component-padding) / 2);
+  --spacing: calc(var(--ui-spacing) / 2);
 
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
       margin: 0 var(--spacing) var(--spacing);
       pointer-events: auto; /* Make buttons clickable */
       background-color: color-mix(in srgb, var(--tool-panel-background-color) 85%, transparent);
-      border-radius: 0 0 var(--component-border-radius) var(--component-border-radius);
+      border-radius: 0 0 var(--ui-border-radius) var(--ui-border-radius);
 
       .btn:first-child {
         border-top-left-radius: 0;
@@ -60,8 +60,8 @@
         content: "";
         width: 14px;
         height: 14px;
-        border: 2px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
-        border-top-color: var(--accent-color);
+        border: 2px solid color-mix(in srgb, var(--accent-indicator-color) 30%, transparent);
+        border-top-color: var(--accent-indicator-color);
         border-radius: 50%;
         animation: spinner-rotate 0.8s linear infinite;
       }
@@ -98,7 +98,7 @@
          corner reads as one thick L, and a dark hairline outside the lot.
          Everything below positions against the padding box, which is the
          inner edge of that border. */
-      --selection-line: var(--accent-color);
+      --selection-line: var(--accent-indicator-color);
       --selection-grip: 7px;
 
       position: absolute;
@@ -206,7 +206,7 @@
 
   /* Boundary overlay animation (styled like find-and-replace wrap icon) */
   .boundary-overlay {
-    --wrap-size: calc(var(--font-size) * 10);
+    --wrap-size: calc(var(--ui-font-size) * 10);
 
     position: absolute;
     top: 50%;
@@ -221,7 +221,7 @@
       color-mix(in srgb, var(--syntax-background-color) 96%, black) 45%,
       transparent
     );
-    border-radius: calc(var(--component-border-radius) * 2);
+    border-radius: calc(var(--ui-border-radius) * 2);
     text-align: center;
 
     &::before {
@@ -301,8 +301,8 @@
   background-color: var(--base-background-color);
   color: var(--text-color);
   border: 1px solid var(--base-border-color);
-  border-radius: var(--component-border-radius);
-  padding: var(--component-padding);
+  border-radius: var(--ui-border-radius);
+  padding: var(--ui-spacing);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 10000;
   min-width: 300px;
@@ -312,7 +312,7 @@
   .dialog-title {
     margin: 0 0 15px 0;
     padding: 0;
-    font-size: var(--font-size);
+    font-size: var(--ui-font-size);
     color: var(--text-color-highlight);
     cursor: move;
     user-select: none;
@@ -333,7 +333,7 @@
     .dialog-label {
       display: block;
       margin-bottom: 5px;
-      font-size: var(--font-size);
+      font-size: var(--ui-font-size);
       color: var(--text-color);
     }
 
@@ -416,7 +416,7 @@
     padding: 8px;
     min-height: 120px;
     border: 1px solid var(--base-border-color);
-    border-radius: var(--component-border-radius);
+    border-radius: var(--ui-border-radius);
     background-color: white;
     background-image: url("lumine://image-editor/assets/transparent.png");
 
