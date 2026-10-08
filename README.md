@@ -7,7 +7,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 ## Features
 
 - **Zoom & pan**: zoom controls, keyboard shortcuts, and right-click drag to pan.
-- **Image browsing**: navigate between images in the same folder.
+- **Image browsing**: navigate between images in the same folder or search their filenames in a picker.
 - **Transform tools**: rotate, flip, resize, and crop images.
 - **Color adjustments**: brightness, contrast, saturation, hue, and auto-adjust.
 - **Filters**: blur, sharpen, grayscale, sepia, posterize, and invert.
@@ -33,6 +33,7 @@ Commands available in `.image-editor`:
 - `image-editor:zoom-to-fit`: scale to fit viewport,
 - `image-editor:zoom-to-selection`: zoom to fit the current selection and clear it,
 - `image-editor:center`: center image in viewport,
+- `image-editor:list`: search image filenames in the current folder and open one,
 - `image-editor:first-image`: go to first image in folder,
 - `image-editor:previous-image`: go to previous image,
 - `image-editor:next-image`: go to next image,
