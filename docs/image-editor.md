@@ -29,7 +29,7 @@ In your `package.json`:
 
 ```ts
 type ImageEditorService = {
-  openFromDataUrl(dataUrl: string, title?: string): ImageEditor;
+  openFromDataUrl(dataUrl: string, title?: string): Promise<ImageEditor | undefined>;
 };
 ```
 
@@ -38,7 +38,7 @@ type ImageEditorService = {
 | `dataUrl` | A `data:` URL containing the image. Required.    |
 | `title`   | The tab's title. Defaults to `"Untitled Image"`. |
 
-Returns the editor item, synchronously.
+Resolves to the opened editor item after the workspace open completes, or `undefined` if the workspace declines it.
 
 ## Minimal example
 
@@ -63,9 +63,9 @@ The item is added to the **active pane and activated**, so the call takes focus.
 
 **Always pass a `title`.** Several images opened without one all read `Untitled Image`, and the user has no way to tell them apart.
 
-The image has no path, so it cannot be saved through the ordinary save command and is gone when the tab closes. Anything the user should keep needs to be written to disk by you.
+The image starts without a path. The ordinary save command opens Save As so the user can choose where to keep it; closing an unsaved tab otherwise discards the image.
 
-The return value is the editor item. It is useful for tracking what you opened, but it is a pane item like any other — the user may close it at any time, so do not assume it stays alive.
+The resolved return value is the editor item. It is useful for tracking what you opened, but it is a pane item like any other — the user may close it at any time, so do not assume it stays alive.
 
 Data URLs hold the whole image in memory, encoded. Large images are better written to a file and opened by path.
 
