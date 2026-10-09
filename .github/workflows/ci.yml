@@ -18,6 +18,13 @@ jobs:
     name: Checks on ${{ matrix.os }} (Node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    env:
+      TEMP: ${{ github.workspace }}/image-editor-checks-tmp
+      TMP: ${{ github.workspace }}/image-editor-checks-tmp
+      TMPDIR: ${{ github.workspace }}/image-editor-checks-tmp
     strategy:
       fail-fast: false
       matrix:
@@ -34,25 +41,41 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      - name: Create the private temporary directory
+        run: mkdir -p "$TEMP"
+      - name: Use HTTPS for GitHub git dependencies
+        run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: Install dependencies
         run: npm ci --ignore-scripts
       - name: Lint
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
-      # The integration job below runs on Linux only, so this is the one place
-      # the path handling in navigation.js is exercised on Windows and macOS.
       - name: Unit tests
         run: npm run test:unit
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+      - name: Check package contents
+        run: npm pack --dry-run
 
   integration:
     # Run the Jasmine spec suite inside a real Lumine build; the specs exercise
     # the editor runtime (text editors, modal panels, and command dispatch).
-    name: Lumine integration specs
-    runs-on: ubuntu-latest
+    name: Lumine integration specs on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
+      TEMP: ${{ github.workspace }}/image-editor-spec-tmp
+      TMP: ${{ github.workspace }}/image-editor-spec-tmp
+      TMPDIR: ${{ github.workspace }}/image-editor-spec-tmp
     steps:
       - uses: actions/checkout@v7
         with:
@@ -61,12 +84,21 @@ jobs:
         with:
           repository: lumine-code/lumine
           path: lumine
+      - name: Check out the original image runtime for the native regression control
+        if: runner.os == 'Linux'
+        uses: actions/checkout@v7
+        with:
+          path: image-editor-original
+          ref: 6a310390f7949855b41e01ef0ac9a5e7dec83893
       - uses: actions/setup-node@v7
         with:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
+      - name: Create the private temporary directory
+        run: mkdir -p "$TEMP"
       - name: Install Linux build and headless-display dependencies
+        if: runner.os == 'Linux'
         run: |
           # A third-party repository on the runner image answering 403 must not
           # fail the job: the lists this actually needs still fetched, and the
@@ -91,7 +123,33 @@ jobs:
       - name: Rebuild native modules for Electron
         working-directory: lumine
         run: npm run build
+      - name: Prepare the private test home
+        working-directory: lumine
+        run: node script/install-spec-packages.js --package ../image-editor --home "$RUNNER_TEMP/image-spec-home" --github-env "$GITHUB_ENV"
+      - name: Verify identical native regressions against the original full runtime
+        if: runner.os == 'Linux'
+        working-directory: lumine
+        timeout-minutes: 20
+        run: |
+          ln -s "$GITHUB_WORKSPACE/image-editor/node_modules" "$GITHUB_WORKSPACE/image-editor-original/node_modules"
+          cp ../image-editor/spec/native-path-ownership-spec.js ../image-editor-original/spec/
+          set +e
+          xvfb-run --auto-servernum npm start -- --test ../image-editor-original/spec > "$RUNNER_TEMP/image-original.log" 2>&1
+          original_status=$?
+          set -e
+          cat "$RUNNER_TEMP/image-original.log"
+          test "$original_status" -eq 1
+          grep -E '[0-9]+ specs, 2 failures' "$RUNNER_TEMP/image-original.log"
+          if grep '\[FAIL\]' "$RUNNER_TEMP/image-original.log" | grep -Ev '^image native path ownership '; then
+            echo "Unexpected original image-runtime failure"
+            exit 1
+          fi
       - name: Run the Jasmine spec suite
         working-directory: lumine
         timeout-minutes: 20
-        run: xvfb-run --auto-servernum npm start -- --test ../image-editor/spec
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            xvfb-run --auto-servernum npm start -- --test ../image-editor/spec
+          else
+            npm start -- --test ../image-editor/spec
+          fi

@@ -40,8 +40,11 @@ describe("encodeFileURL", () => {
 });
 
 describe("normalizePathKey", () => {
-  it("folds case, so two spellings of one file agree", () => {
-    assert.equal(paths.normalizePathKey("C:/Data/A.PNG"), paths.normalizePathKey("C:/data/a.png"));
+  it("folds Windows case and preserves POSIX case", () => {
+    const first = paths.normalizePathKey("C:/Data/A.PNG");
+    const second = paths.normalizePathKey("C:/data/a.png");
+    if (process.platform === "win32") assert.equal(first, second);
+    else assert.notEqual(first, second);
   });
 
   if (path.sep === "\\") {
