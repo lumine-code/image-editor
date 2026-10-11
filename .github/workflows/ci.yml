@@ -22,6 +22,11 @@ jobs:
       run:
         shell: bash
     env:
+      LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
+      HOME: ${{ github.workspace }}/image-editor-checks-home
+      USERPROFILE: ${{ github.workspace }}/image-editor-checks-home
+      LUMINE_HOME: ${{ github.workspace }}/image-editor-checks-home
+      XDG_CONFIG_HOME: ${{ github.workspace }}/image-editor-checks-home
       TEMP: ${{ github.workspace }}/image-editor-checks-tmp
       TMP: ${{ github.workspace }}/image-editor-checks-tmp
       TMPDIR: ${{ github.workspace }}/image-editor-checks-tmp
@@ -37,12 +42,12 @@ jobs:
             node: 24
     steps:
       - uses: actions/checkout@v7
+      - name: Create the private home and temporary directory
+        run: mkdir -p "$TEMP" "$LUMINE_HOME/electronUserData"
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - name: Create the private temporary directory
-        run: mkdir -p "$TEMP"
       - name: Use HTTPS for GitHub git dependencies
         run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: Install dependencies
@@ -73,10 +78,17 @@ jobs:
         shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
+      LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
+      HOME: ${{ github.workspace }}/image-editor-spec-home
+      USERPROFILE: ${{ github.workspace }}/image-editor-spec-home
+      LUMINE_HOME: ${{ github.workspace }}/image-editor-spec-home
+      XDG_CONFIG_HOME: ${{ github.workspace }}/image-editor-spec-home
       TEMP: ${{ github.workspace }}/image-editor-spec-tmp
       TMP: ${{ github.workspace }}/image-editor-spec-tmp
       TMPDIR: ${{ github.workspace }}/image-editor-spec-tmp
     steps:
+      - name: Create the private home and temporary directory
+        run: mkdir -p "$TEMP" "$LUMINE_HOME/electronUserData"
       - uses: actions/checkout@v7
         with:
           path: image-editor
@@ -95,8 +107,6 @@ jobs:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
-      - name: Create the private temporary directory
-        run: mkdir -p "$TEMP"
       - name: Install Linux build and headless-display dependencies
         if: runner.os == 'Linux'
         run: |
@@ -125,7 +135,7 @@ jobs:
         run: npm run build
       - name: Prepare the private test home
         working-directory: lumine
-        run: node script/install-spec-packages.js --package ../image-editor --home "$RUNNER_TEMP/image-spec-home" --github-env "$GITHUB_ENV"
+        run: node script/install-spec-packages.js --package ../image-editor --home "$LUMINE_HOME" --github-env "$GITHUB_ENV"
       - name: Verify identical native regressions against the original full runtime
         if: runner.os == 'Linux'
         working-directory: lumine
