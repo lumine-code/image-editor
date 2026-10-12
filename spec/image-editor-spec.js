@@ -76,7 +76,7 @@ describe("image-editor", () => {
 
       const pane = lumine.workspace.getCenter().getActivePane();
       const otherItem = document.createElement("div");
-      otherItem.isSingleton = () => true;
+      otherItem.canCopy = () => false;
       pane.addItem(otherItem);
       pane.activateItem(otherItem);
 

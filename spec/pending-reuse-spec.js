@@ -638,7 +638,7 @@ describe("image-editor pending reuse", () => {
   it("terminates pending state in its own pane while another pane is active", () => {
     const ownPane = lumine.workspace.paneForItem(item);
     const otherItem = document.createElement("div");
-    otherItem.isSingleton = () => true;
+    otherItem.canCopy = () => false;
     ownPane.splitRight({ items: [otherItem], activate: true });
     item.terminatePendingState();
     expect(ownPane.getPendingItem()).toBe(null);
