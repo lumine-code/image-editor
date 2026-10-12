@@ -37,7 +37,24 @@ describe("Image service edge ownership", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   });
   function provide(name, service) {
-    const lease = lumine.packages.serviceHub.provide(name, "1.0.0", service);
+    const payload =
+      name === "status-bar"
+        ? {
+            observeWindows(create) {
+              const window = lumine.workspace.getMainWindow();
+              return create(service, {
+                window,
+                document: window.getDocument(),
+                editorContainer: window.getEditorContainer(),
+              });
+            },
+          }
+        : service;
+    const lease = lumine.packages.serviceHub.provide(
+      name,
+      name === "status-bar" ? "2.0.0" : "1.0.0",
+      payload,
+    );
     leases.push(lease);
     return lease;
   }
@@ -77,12 +94,12 @@ describe("Image service edge ownership", () => {
     second.dispose();
     expect(service.root.querySelector(".status-image")).toBeNull();
   });
-  it("moves the tile to the newest service and restores the surviving provider", () => {
+  it("owns independent tiles for overlapping service providers", () => {
     const a = status(),
       b = status();
     provide("status-bar", a);
     const second = provide("status-bar", b);
-    expect(a.root.querySelector(".status-image")).toBeNull();
+    expect(a.root.querySelector(".status-image")?.textContent).toContain("2x2");
     expect(b.root.querySelector(".status-image")?.textContent).toContain("2x2");
     second.dispose();
     expect(b.root.querySelector(".status-image")).toBeNull();
