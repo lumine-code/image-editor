@@ -117,7 +117,7 @@ describe("native image pixels and ownership", () => {
 
   it("copies a temporary image through an actual Core split", async () => {
     const item = await open(canvas(3, 2, "red"));
-    const pane = lumine.workspace.paneForItem(item).splitRight({ copyActiveItem: true });
+    const { pane } = await lumine.workspace.copyPaneItem(item, { splitDirection: "right" });
     const copy = pane.getActiveItem();
     items.push(copy);
     expect(copy.isTemporary()).toBe(true);
@@ -138,7 +138,7 @@ describe("native image pixels and ownership", () => {
     const before = pixels(item.view).join();
     item.view.invertColors();
     await wait(() => pixels(item.view)?.join() !== before);
-    const pane = lumine.workspace.paneForItem(item).splitRight({ copyActiveItem: true });
+    const { pane } = await lumine.workspace.copyPaneItem(item, { splitDirection: "right" });
     const copy = pane.getActiveItem();
     items.push(copy);
     await wait(() => copy.view.loaded && copy.view.refs.image.complete);
@@ -150,6 +150,191 @@ describe("native image pixels and ownership", () => {
     await copy.view.undo();
     await wait(() => pixels(copy.view)?.join() === copied);
     expect(copy.getFileState()).toBe("modified");
+  });
+
+  it("shares pixels and undo history while each copy owns its viewport and selection", async () => {
+    const original = await open(canvas(3, 2, "red"));
+    original.view.auto = false;
+    original.view.zoom = 0.75;
+    original.view.translateX = 19;
+    original.view.selectAll();
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    expect(copy.document).toBe(original.document);
+    expect(copy.view.historyManager).toBe(original.view.historyManager);
+    expect(copy.view.zoom).toBe(0.75);
+    expect(copy.view.selectionStartImg).not.toBe(original.view.selectionStartImg);
+    const before = pixels(original.view).join();
+    copy.view.auto = false;
+    copy.view.zoom = 0.5;
+    copy.view.translateX = 31;
+    copy.view.setSelectionVisibility(false);
+    copy.view.invertColors();
+    await wait(
+      () =>
+        pixels(copy.view)?.join() !== before &&
+        pixels(original.view)?.join() === pixels(copy.view)?.join(),
+    );
+    expect(original.view.zoom).toBe(0.75);
+    expect(copy.view.zoom).toBe(0.5);
+    await original.view.undo();
+    await wait(
+      () => pixels(original.view)?.join() === before && pixels(copy.view)?.join() === before,
+    );
+    const document = copy.document;
+    original.destroy();
+    expect(document.destroyed).toBe(false);
+    expect(document.historyManager.disposed).toBe(false);
+    copy.view.invertColors();
+    await wait(() => pixels(copy.view)?.join() !== before);
+  });
+
+  it("finishes an accepted pixel encode after its source view closes", async () => {
+    const original = await open(canvas(3, 2, "red"));
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    const before = pixels(copy.view).join();
+    holdEncodes(2);
+    original.view.invertColors();
+    expect(pending.length).toBe(2);
+    original.destroy();
+    release(0);
+    release(1);
+    await wait(() => pixels(copy.view)?.join() !== before);
+    expect(copy.view.historyManager.canUndo()).toBe(true);
+    await copy.view.undo();
+    await wait(() => pixels(copy.view)?.join() === before);
+  });
+
+  it("keeps the shared original document when one view navigates to another file", async () => {
+    const file = path.join(directory, "original.png");
+    const otherFile = path.join(directory, "next.png");
+    fs.writeFileSync(file, Buffer.from(canvas(3, 2, "red").toDataURL().split(",")[1], "base64"));
+    fs.writeFileSync(
+      otherFile,
+      Buffer.from(canvas(3, 2, "blue").toDataURL().split(",")[1], "base64"),
+    );
+    const original = await lumine.workspace.open(file);
+    items.push(original);
+    await wait(() => original.view.loaded && original.view.refs.image.complete);
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    expect(copy.file).toBe(original.file);
+    const oldDocument = copy.document;
+    const before = pixels(copy.view).join();
+    expect(await original.view.loadImageFromNavigation(otherFile)).toBe(true);
+    await wait(() => pixels(original.view)?.join() !== before);
+    expect(original.document).not.toBe(oldDocument);
+    expect(copy.document).toBe(oldDocument);
+    expect(copy.getPath()).toBe(file);
+    expect(oldDocument.destroyed).toBe(false);
+    expect(pixels(copy.view).join()).toBe(before);
+  });
+
+  it("cancels a copy waiting for an encode without adding a document owner", async () => {
+    const original = await open(canvas(3, 2, "red"));
+    holdEncodes(2);
+    original.view.invertColors();
+    const controller = new AbortController();
+    const copying = original.copy({ signal: controller.signal });
+    controller.abort();
+    await expectAsync(copying).toBeRejected();
+    expect(original.document.references).toBe(1);
+    release(0);
+    release(1);
+    await wait(() => original.document.historyManager.getCurrentState().settled);
+  });
+
+  it("keeps a live dialog preview out of the shared committed pixels", async () => {
+    const original = await open(canvas(3, 2, "red"));
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    const before = pixels(copy.view).join();
+    original.view.commitCanvas(canvas(3, 2, "blue"), { recordHistory: false });
+    await wait(() => pixels(original.view)?.join() !== before);
+    expect(pixels(copy.view).join()).toBe(before);
+    expect(copy.view.historyManager.length).toBe(0);
+  });
+
+  it("applies a sibling edit after the accepted pixels have encoded and synchronized", async () => {
+    const original = await open(canvas(3, 2, "red"));
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    const before = pixels(copy.view).join();
+    holdEncodes(2);
+    original.view.invertColors();
+    copy.view.invertColors();
+    expect(pending.length).toBe(2);
+    release(0);
+    release(1);
+    await wait(
+      () =>
+        copy.view.historyManager.length === 3 &&
+        pixels(copy.view)?.join() === before &&
+        pixels(original.view)?.join() === before,
+    );
+  });
+
+  it("completes a shared save after the initiating view closes", async () => {
+    const file = path.join(directory, "shared-save.png");
+    fs.writeFileSync(file, Buffer.from(canvas(3, 2, "red").toDataURL().split(",")[1], "base64"));
+    const original = await lumine.workspace.open(file);
+    items.push(original);
+    await wait(() => original.view.loaded && original.view.refs.image.complete);
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    const before = pixels(copy.view).join();
+    copy.view.invertColors();
+    await wait(
+      () =>
+        pixels(copy.view)?.join() !== before &&
+        pixels(original.view)?.join() === pixels(copy.view)?.join(),
+    );
+    holdEncodes();
+    const saving = original.save();
+    expect(copy.view.isSaving).toBe(true);
+    original.destroy();
+    release(0);
+    expect(await saving).toBe(true);
+    expect(copy.document.destroyed).toBe(false);
+    expect(copy.getFileState()).toBe("unmodified");
+    expect(copy.view.isSaving).toBe(false);
+  });
+
+  it("retargets every shared view when saving a temporary document as a file", async () => {
+    const original = await open(canvas(3, 2, "red"));
+    const { item: copy } = await lumine.workspace.copyPaneItem(original, {
+      splitDirection: "right",
+    });
+    items.push(copy);
+    await wait(() => copy.view.loaded && copy.view.refs.image.complete);
+    const file = path.join(directory, "kept.png");
+    spyOn(lumine.window, "showSaveDialog").and.resolveTo({ canceled: false, filePath: file });
+    expect(await copy.saveAs()).toBe(true);
+    expect(original.document).toBe(copy.document);
+    expect(original.getPath()).toBe(file);
+    expect(original.file).toBe(copy.file);
+    expect(original.isTemporary()).toBe(false);
+    expect(copy.getFileState()).toBe("unmodified");
+    expect(fs.existsSync(file)).toBe(true);
   });
 
   it("preserves a newer edit when the accepted older save finishes writing", async () => {

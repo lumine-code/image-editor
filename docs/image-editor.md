@@ -67,6 +67,8 @@ The image starts without a path. The ordinary save command opens Save As so the 
 
 The resolved return value is the editor item. It is useful for tracking what you opened, but it is a pane item like any other — the user may close it at any time, so do not assume it stays alive.
 
+Pane copies share one retained image document, including pixels, undo history, saving, file state and its watcher. Each view owns its DOM, zoom, pan, selection and display URLs. `copy({signal})` waits for an accepted pixel encode when necessary and can be cancelled without cancelling that encode. Closing one view preserves the shared document until its final view closes. Navigating a view to another image replaces only that view's document; Save As retargets the shared image for every view. Dialog previews stay local until accepted.
+
 Data URLs hold the whole image in memory, encoded. Large images are better written to a file and opened by path.
 
 ## Teardown
