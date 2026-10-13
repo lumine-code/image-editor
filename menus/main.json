@@ -6,6 +6,15 @@
       },
       {
         "label": "Open in Image Editor",
+        "afterGroupContaining": [
+          "search-panel:project-show-in-current-directory",
+          "open-external:show",
+          "tree-view:open-selected-entry-up",
+          "native-clip:paste",
+          "tree-view:paste",
+          "tree-view:remove",
+          "tree-view:add-file"
+        ],
         "command": "image-editor:open-in-new-tab"
       },
       {
