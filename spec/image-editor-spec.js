@@ -1,6 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { createRequire } = require("node:module");
 let ImageEditor;
 
 // A 1x1 transparent PNG.
@@ -35,7 +36,7 @@ describe("image-editor", () => {
     jasmine.attachToDOM(workspaceElement);
     const pkg = await lumine.packages.activatePackage("image-editor");
     mainModule = pkg.mainModule;
-    ImageEditor = require("../lib/editor");
+    ImageEditor = createRequire(path.join(pkg.path, "package.json"))("./lib/editor");
   });
 
   describe("opener", () => {
@@ -66,7 +67,10 @@ describe("image-editor", () => {
   describe("status bar", () => {
     it("hides the whole tile while a non-text center item is active", async () => {
       const image = await lumine.workspace.open(samplePath);
-      const ImageEditorStatusView = require("../lib/status");
+      const pack = lumine.packages.getActivePackage("image-editor");
+      const ImageEditorStatusView = createRequire(path.join(pack.path, "package.json"))(
+        "./lib/status",
+      );
       const statusView = new ImageEditorStatusView({
         addLeftTile: () => ({ destroy() {} }),
       });

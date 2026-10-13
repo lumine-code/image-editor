@@ -130,6 +130,8 @@ module.exports = {
 
 The opened image will be marked as "modified" and prompt the user to save when closing.
 
+Click the image status tile to show image properties, or right-click it to select Image Properties from its context menu.
+
 ## Services
 
 - [`image-editor`](docs/image-editor.md): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.

@@ -1,4 +1,5 @@
 const path = require("node:path");
+const { createRequire } = require("node:module");
 
 function pixels(color, width = 2) {
   const canvas = document.createElement("canvas");
@@ -29,7 +30,8 @@ describe("shared image snapshots", () => {
   });
 
   it("waits for pending pixels and restores one untitled document, undo and independent views", async () => {
-    const Editor = require("../lib/editor");
+    const pack = lumine.packages.getActivePackage("image-editor");
+    const Editor = createRequire(path.join(pack.path, "package.json"))("./lib/editor");
     const original = Editor.fromDataUrl(pixels("red").toDataURL(), "Unsaved drawing");
     await lumine.workspace.open(original);
     await conditionPromise(() => original.view.loaded);
