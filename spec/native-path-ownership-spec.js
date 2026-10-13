@@ -3,7 +3,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 describe("image native path ownership", () => {
-  let pack, directory, items;
+  let pack, directory, items, ImageNavigator;
 
   beforeEach(async () => {
     jasmine.useRealClock();
@@ -11,6 +11,10 @@ describe("image native path ownership", () => {
       spyOn(lumine.shell, method).and.resolveTo();
     spyOn(lumine.application, "openWindow").and.resolveTo();
     pack = await lumine.packages.activatePackage("image-editor");
+    const requireCurrent = require("node:module").createRequire(
+      path.join(pack.path, "package.json"),
+    );
+    ImageNavigator = requireCurrent("./lib/navigation");
     directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "image-path-owned-")));
     items = [];
     jasmine.attachToDOM(lumine.workspace.getElement());
@@ -24,7 +28,7 @@ describe("image native path ownership", () => {
     if (!relative || relative.startsWith("..") || path.isAbsolute(relative))
       throw new Error("Unsafe image path scratch");
     fs.rmSync(directory, { recursive: true, force: true });
-    pack = directory = items = null;
+    pack = directory = items = ImageNavigator = null;
   });
 
   function image(name) {
@@ -68,7 +72,6 @@ describe("image native path ownership", () => {
     const file = image("alias.png");
     const alias = path.join(directory, "ALIAS.PNG");
     if (!fs.existsSync(alias)) {
-      const ImageNavigator = require(path.join(pack.path, "lib/navigation"));
       expect((await new ImageNavigator().getFileList(alias)).currentIndex).toBe(-1);
       return;
     }
