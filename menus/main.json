@@ -271,8 +271,7 @@
       },
       {
         "label": "Image Properties",
-        "command": "image-editor:show-properties",
-        "mouseBindingLabel": "LMB"
+        "command": "image-editor:show-properties"
       },
       {
         "type": "separator"

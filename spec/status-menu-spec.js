@@ -18,7 +18,6 @@ describe("Image Editor status action menu", () => {
     const element = tile();
     const menu = lumine.contextMenu.templateForElement(element);
     expect(menu.map((item) => item.command)).toEqual(["image-editor:show-properties"]);
-    expect(menu[0].mouseBindingLabel).toBe("LMB");
     const [tooltip] = lumine.tooltips.findTooltips(element);
     expect(tooltip.getTitle()).toContain("Click to show image properties.");
     const properties = spyOn(image.view, "showPropertiesDialog");
