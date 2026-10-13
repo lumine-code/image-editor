@@ -49,6 +49,15 @@ describe("image presentation windows", () => {
     );
   });
 
+  it("opens Save As in the image's window", async () => {
+    const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
+    const dialog = spyOn(extra, "showSaveDialog").and.resolveTo({ canceled: true });
+    const mainDialog = spyOn(lumine.window, "showSaveDialog").and.resolveTo({ canceled: true });
+    expect(await image.saveAs()).toBeFalse();
+    expect(dialog).toHaveBeenCalledTimes(1);
+    expect(mainDialog).not.toHaveBeenCalled();
+  });
+
   it("does not ask about shared dirty contents when another image view remains", async () => {
     const copy = image.copy();
     const extra = await lumine.workspace.openEditorWindow({ show: false });

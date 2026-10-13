@@ -386,13 +386,24 @@ describe("native image pixels and ownership", () => {
     const file = path.join(directory, "latest-accepted.png");
     const saving = item.saveAs();
     const before = pixels(item.view).join();
+    holdEncodes();
     item.view.invertColors();
-    await wait(() => pixels(item.view)?.join() !== before);
+    expect(pending.length).toBe(1);
     accept({ canceled: false, filePath: file });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(fs.existsSync(file)).toBe(false);
+    expect(item.view.isSaving).toBe(true);
+    release(0);
     expect(await saving).toBe(true);
+    const acceptedPixels = pixels(item.view).join();
+    expect(acceptedPixels).not.toBe(before);
     expect(item.getFileState()).toBe("unmodified");
     expect(item.view.isModified()).toBe(false);
     expect(item.getPath()).toBe(file);
+    const saved = document.createElement("img");
+    saved.src = "data:image/png;base64," + fs.readFileSync(file).toString("base64");
+    await saved.decode();
+    expect(pixels({ refs: { image: saved } }).join()).toBe(acceptedPixels);
   });
 
   it("keeps the latest same-document pixels when native encodes settle in reverse order", async () => {
