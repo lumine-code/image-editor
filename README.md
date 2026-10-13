@@ -19,6 +19,8 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 
 Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes.
 
+![Inspect a plotted waveform in the image editor.](.github/demo.png)
+
 ## Installation
 
 To install `image-editor` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/image-editor`.

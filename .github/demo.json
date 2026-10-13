@@ -1,0 +1,16 @@
+{
+  "title": "image-editor",
+  "description": "Inspect a plotted waveform in the image editor.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "cd6bfb590aca8d49ba023fca626ec8001fc79be6",
+  "mode": "normal",
+  "fontSettings": "default",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Inspect a plotted waveform in the image editor.",
+      "width": 1200,
+      "height": 760
+    }
+  ]
+}
