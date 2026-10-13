@@ -14,6 +14,80 @@ describe("image presentation windows", () => {
     await lumine.workspace.discardEditorWindows();
   });
 
+  function expectFitted(view) {
+    const container = view.refs.imageContainer;
+    const zoom = Math.min(
+      container.offsetWidth / view.refs.image.naturalWidth,
+      container.offsetHeight / view.refs.image.naturalHeight,
+    );
+    const transform = new view.window.DOMMatrix(
+      view.window.getComputedStyle(view.refs.image).transform,
+    );
+    expect(transform.a).toBeCloseTo(zoom, 4);
+    expect(transform.e).toBeCloseTo(
+      (container.offsetWidth - view.refs.image.naturalWidth * zoom) / 2,
+      3,
+    );
+    expect(transform.f).toBeCloseTo(
+      (container.offsetHeight - view.refs.image.naturalHeight * zoom) / 2,
+      3,
+    );
+  }
+
+  it("fits resized image bounds before paint, without waiting for another animation frame", async () => {
+    lumine.config.set("image-editor.autoZoomLimit", false);
+    const view = image.view;
+    view.element.style.height = "300px";
+    const container = view.refs.imageContainer;
+    Object.assign(container.style, { flex: "none", width: "160px", height: "100px" });
+    view.zoomToFit();
+    await conditionPromise(() => view.renderedTransform?.zoom === 50);
+    const resized = new Promise((resolve) => {
+      const observer = new ResizeObserver(() => {
+        if (container.offsetWidth !== 80) return;
+        expectFitted(view);
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(container);
+    });
+    container.style.width = "80px";
+    await resized;
+  });
+
+  it("fits the adopted image to its attached pane before the transfer completes", async () => {
+    lumine.config.set("image-editor.autoZoomLimit", false);
+    const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
+    const view = image.view;
+    view.element.style.height = "300px";
+    Object.assign(view.refs.imageContainer.style, {
+      flex: "none",
+      width: "160px",
+      height: "100px",
+    });
+    await conditionPromise(() => view.renderedTransform?.zoom === 50);
+    view.refs.imageContainer.style.width = "80px";
+    await lumine.workspace.attachWindow(extra);
+    expect(view.document).toBe(document);
+    expectFitted(view);
+  });
+
+  it("keeps a manual viewport, including a pending pan, when its pane is attached", async () => {
+    const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
+    const view = image.view;
+    view.disableAutoZoom();
+    view.zoom = 2;
+    view.translateX = 17;
+    view.translateY = 23;
+    view.updateTransform();
+    await lumine.workspace.attachWindow(extra);
+    const transform = new DOMMatrix(getComputedStyle(view.refs.image).transform);
+    expect(view.auto).toBeFalse();
+    expect(transform.a).toBe(2);
+    expect(transform.e).toBe(17);
+    expect(transform.f).toBe(23);
+  });
+
   it("keeps the same pixels, view and document while rebinding pointer input to its new window", async () => {
     const view = image.view;
     const element = lumine.views.getView(image);
