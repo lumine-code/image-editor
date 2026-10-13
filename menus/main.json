@@ -266,18 +266,6 @@
       {
         "type": "separator"
       }
-    ],
-    ".status-image": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Image Properties",
-        "command": "image-editor:show-properties"
-      },
-      {
-        "type": "separator"
-      }
     ]
   }
 }

@@ -39,4 +39,25 @@ describe("Image Editor status action menu", () => {
       lumine.contextMenu.templateForElement(element).map((item) => item.command),
     ).not.toContain("image-editor:show-properties");
   });
+  it("looks up a custom properties shortcut on the image view and suppresses it without an image", async () => {
+    const element = tile();
+    const keys = lumine.keymaps.add("image-status-shortcut-spec", {
+      ".image-editor": { "ctrl-alt-1": "image-editor:show-properties" },
+    });
+    try {
+      const menu = lumine.contextMenu.templateForElement(element);
+      const label = process.platform === "darwin" ? "⌃⌥1" : "Ctrl+Alt+1";
+      expect(menu[0].keyBindingLabel).toBe(label);
+      const popup = lumine.contextMenu.show(element, menu);
+      try {
+        expect(popup.element.querySelector(".menu-item-keystroke").textContent).toBe(label);
+      } finally {
+        popup.close();
+      }
+      await lumine.workspace.open();
+      expect(lumine.contextMenu.templateForElement(element)[0].keyBindingLabel).toBe("");
+    } finally {
+      keys.dispose();
+    }
+  });
 });
