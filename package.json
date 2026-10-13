@@ -70,11 +70,6 @@
       "versions": {
         "^2.0.0": "consumeStatusBar"
       }
-    },
-    "tree-view.selection": {
-      "versions": {
-        "^1.0.0": "consumeTreeViewSelection"
-      }
     }
   },
   "deserializers": {

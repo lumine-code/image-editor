@@ -70,19 +70,6 @@ describe("Image service edge ownership", () => {
       },
     };
   }
-  function tree(name) {
-    return { selectedPaths: () => [path.join(directory, name)] };
-  }
-  async function openSelected() {
-    const root = document.createElement("div");
-    root.className = "tree-view";
-    lumine.workspace.getElement().append(root);
-    roots.push(root);
-    const open = spyOn(main, "openInImageEditor").and.callThrough();
-    lumine.commands.dispatch(root, "image-editor:open-in-new-tab");
-    const result = await open.calls.mostRecent().returnValue;
-    return result;
-  }
   it("retains a real status tile until the last shared service edge retires", () => {
     const service = status();
     const first = provide("status-bar", service);
@@ -105,19 +92,6 @@ describe("Image service edge ownership", () => {
     expect(b.root.querySelector(".status-image")).toBeNull();
     expect(a.root.querySelector(".status-image")?.textContent).toContain("2x2");
   });
-  it("keeps the selected tree file after one shared provider edge retires", async () => {
-    const service = tree("second.png");
-    const first = provide("tree-view.selection", service);
-    provide("tree-view.selection", service);
-    first.dispose();
-    expect((await openSelected())?.getPath()).toBe(path.join(directory, "second.png"));
-  });
-  it("restores the surviving tree selection after the newest provider retires", async () => {
-    provide("tree-view.selection", tree("first.png"));
-    const second = provide("tree-view.selection", tree("second.png"));
-    second.dispose();
-    expect((await openSelected())?.getPath()).toBe(path.join(directory, "first.png"));
-  });
   it("stops a retired status view from observing actual image transformations", async () => {
     const service = status();
     const lease = provide("status-bar", service);
@@ -134,12 +108,10 @@ describe("Image service edge ownership", () => {
     expect(updated).not.toHaveBeenCalled();
     expect(service.root.querySelector(".status-image")).toBeNull();
   });
-  it("uses ordinary live status and tree providers", async () => {
+  it("uses ordinary live status providers", () => {
     const service = status();
     provide("status-bar", service);
-    provide("tree-view.selection", tree("second.png"));
     expect(service.root.querySelector(".status-image").textContent).toContain("2x2");
-    expect((await openSelected()).getPath()).toBe(path.join(directory, "second.png"));
   });
   it("does not publish properties after its image closes during the owned directory read", async () => {
     const view = image.view;

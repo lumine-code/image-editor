@@ -54,6 +54,21 @@ describe("image-editor", () => {
       expect(lumine.workspace.isTextEditor(item)).toBe(true);
     });
 
+    it("offers SVG viewing while keeping Text Editor as the automatic default", () => {
+      const uri = path.join(__dirname, "fixtures", "drawing.svg");
+      const before = lumine.workspace.getPaneItems().slice();
+      expect(lumine.workspace.getAvailableFileOpeners(uri)).toEqual([
+        { id: "text-editor", label: "Text Editor", isDefault: true },
+        { id: "image-editor", label: "Image Editor", isDefault: false },
+      ]);
+      expect(lumine.workspace.getPaneItems()).toEqual(before);
+      expect(lumine.workspace.getAvailableFileOpeners(samplePath)[0]).toEqual({
+        id: "image-editor",
+        label: "Image Editor",
+        isDefault: true,
+      });
+    });
+
     it("closes image items before the package is deactivated", async () => {
       const item = await lumine.workspace.open(samplePath);
 
@@ -298,11 +313,11 @@ describe("image-editor", () => {
     it("opens explicitly selected files through the workspace", async () => {
       const open = spyOn(lumine.workspace, "open").and.callThrough();
 
-      const editor = await mainModule.openInImageEditor(samplePath);
+      const editor = await lumine.workspace.open(samplePath, { opener: "image-editor" });
 
       expect(editor instanceof ImageEditor).toBe(true);
       expect(editor.getPath()).toBe(samplePath);
-      expect(open).toHaveBeenCalledWith(editor);
+      expect(open).toHaveBeenCalledWith(samplePath, { opener: "image-editor" });
     });
   });
 

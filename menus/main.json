@@ -1,33 +1,8 @@
 {
   "context-menu": {
-    ".tree-view .file[data-path$=\".svg\"]": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Open in Image Editor",
-        "afterGroupContaining": [
-          "search-panel:project-show-in-current-directory",
-          "open-external:show",
-          "tree-view:open-selected-entry-up",
-          "native-clip:paste",
-          "tree-view:paste",
-          "tree-view:remove",
-          "tree-view:add-file"
-        ],
-        "command": "image-editor:open-in-new-tab"
-      },
-      {
-        "type": "separator"
-      }
-    ],
     ".image-editor": [
       {
         "type": "separator"
-      },
-      {
-        "label": "Open in New Tab",
-        "command": "image-editor:open-in-new-tab"
       },
       {
         "label": "Reload Image",
@@ -236,32 +211,6 @@
       {
         "label": "Save As…",
         "command": "core:save-as"
-      },
-      {
-        "type": "separator"
-      }
-    ],
-    "lumine-text-editor[data-grammar=\"text html svg\"]:not([mini])": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Open in Image Editor",
-        "afterGroupContaining": [
-          "link:open",
-          {
-            "id": "color-inline:editor-context"
-          },
-          "spell-check:check-selected",
-          "tasklist-tools:toggle-tick",
-          "core:select-all",
-          "core:paste",
-          "core:redo",
-          "core:undo"
-        ],
-        "command": "image-editor:open-in-new-tab",
-        "group": "views",
-        "order": 30
       },
       {
         "type": "separator"

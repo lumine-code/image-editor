@@ -19,6 +19,8 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 
 Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes.
 
+Use Open With… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
+
 ![Inspect a plotted waveform in the image editor.](.github/demo.png)
 
 ## Installation
@@ -41,7 +43,6 @@ Commands available in `.image-editor`:
 - `image-editor:next-image`: go to next image,
 - `image-editor:last-image`: go to last image in folder,
 - `image-editor:reload`: refresh image from disk,
-- `image-editor:open-in-new-tab`: open the current image in a new tab (also available in tree-view and text-editor context menus for SVG files),
 - `image-editor:background-white`: set white background,
 - `image-editor:background-black`: set black background,
 - `image-editor:background-transparent`: set transparent background,
@@ -139,7 +140,6 @@ Left-click the image status tile to show image properties, or right-click it to 
 - [`image-editor`](docs/image-editor.md): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
 - `navigation.adapter`: provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
 - `status-bar`: consumed to show image dimensions, file size, and mouse position in the status bar.
-- `tree-view.selection`: consumed to read the selected paths for the "Open in Image Editor" context command.
 
 ## Contributing
 
