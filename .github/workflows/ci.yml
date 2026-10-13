@@ -156,7 +156,7 @@ jobs:
           source = source.replace(registration, "registerOriginalFileOpener(");
           source += `
           function registerOriginalFileOpener(open, capabilities) {
-            return lumine.workspace.addFileOpener({
+            return lumine.workspace.addPathOpener({
               id: "image-editor",
               label: "Image Editor",
               canOpen: (uri) => imageExtensions.includes(path.extname(uri).toLowerCase()),

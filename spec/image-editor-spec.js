@@ -57,15 +57,26 @@ describe("image-editor", () => {
     it("offers SVG viewing while keeping Text Editor as the automatic default", () => {
       const uri = path.join(__dirname, "fixtures", "drawing.svg");
       const before = lumine.workspace.getPaneItems().slice();
-      expect(lumine.workspace.getAvailableFileOpeners(uri)).toEqual([
-        { id: "text-editor", label: "Text Editor", isDefault: true },
-        { id: "image-editor", label: "Image Editor", isDefault: false },
+      expect(lumine.workspace.getAvailablePathOpeners(uri)).toEqual([
+        {
+          id: "text-editor",
+          label: "Text Editor",
+          isDefault: true,
+          destinations: ["current", "new-window", "detached-window"],
+        },
+        {
+          id: "image-editor",
+          label: "Image Editor",
+          isDefault: false,
+          destinations: ["current", "new-window", "detached-window"],
+        },
       ]);
       expect(lumine.workspace.getPaneItems()).toEqual(before);
-      expect(lumine.workspace.getAvailableFileOpeners(samplePath)[0]).toEqual({
+      expect(lumine.workspace.getAvailablePathOpeners(samplePath)[0]).toEqual({
         id: "image-editor",
         label: "Image Editor",
         isDefault: true,
+        destinations: ["current", "new-window", "detached-window"],
       });
     });
 
