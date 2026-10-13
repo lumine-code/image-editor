@@ -259,7 +259,9 @@
           "core:redo",
           "core:undo"
         ],
-        "command": "image-editor:open-in-new-tab"
+        "command": "image-editor:open-in-new-tab",
+        "group": "views",
+        "order": 30
       },
       {
         "type": "separator"
