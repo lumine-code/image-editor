@@ -247,6 +247,18 @@
       },
       {
         "label": "Open in Image Editor",
+        "afterGroupContaining": [
+          "link:open",
+          {
+            "id": "color-inline:editor-context"
+          },
+          "spell-check:check-selected",
+          "tasklist-tools:toggle-tick",
+          "core:select-all",
+          "core:paste",
+          "core:redo",
+          "core:undo"
+        ],
         "command": "image-editor:open-in-new-tab"
       },
       {
