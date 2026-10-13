@@ -110,9 +110,9 @@ describe("image-editor", () => {
       expect(restored).toBeUndefined();
     });
 
-    it("does not serialize temporary data-URL editors", () => {
+    it("serializes temporary views by shared document identity", () => {
       const editor = ImageEditor.fromDataUrl(DATA_URL, "Temp");
-      expect(editor.serialize()).toBeNull();
+      expect(editor.serialize().documentId).toBe(editor.document.id);
       editor.destroy();
     });
   });
