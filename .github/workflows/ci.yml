@@ -143,6 +143,30 @@ jobs:
         run: |
           ln -s "$GITHUB_WORKSPACE/image-editor/node_modules" "$GITHUB_WORKSPACE/image-editor-original/node_modules"
           cp ../image-editor/spec/native-path-ownership-spec.js ../image-editor-original/spec/
+          # Adapt only the control's registration to the current file-opener
+          # contract; its native path and navigation implementations stay intact.
+          node <<'NODE'
+          const fs = require("node:fs");
+          const filename = "../image-editor-original/lib/main.js";
+          let source = fs.readFileSync(filename, "utf8");
+          const registration = "lumine.workspace.addOpener(";
+          if (source.split(registration).length !== 2) {
+            throw new Error("The historical image runtime must have one file opener");
+          }
+          source = source.replace(registration, "registerOriginalFileOpener(");
+          source += `
+          function registerOriginalFileOpener(open, capabilities) {
+            return lumine.workspace.addFileOpener({
+              id: "image-editor",
+              label: "Image Editor",
+              canOpen: (uri) => imageExtensions.includes(path.extname(uri).toLowerCase()),
+              open,
+              ...capabilities,
+            });
+          }
+          `;
+          fs.writeFileSync(filename, source);
+          NODE
           # Run the identical native assertions against the historical runtime;
           # its unrelated old pane fixtures target a retired Core contract.
           # Xvfb's authority directory belongs outside test-owned scratch space.
