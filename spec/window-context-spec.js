@@ -34,6 +34,26 @@ describe("image presentation windows", () => {
     );
   }
 
+  it("finishes a deferred filter after its source window is attached and closed", async () => {
+    const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
+    const view = image.view;
+    const frames = [];
+    spyOn(extra.getDOMWindow(), "requestAnimationFrame").and.callFake((callback) =>
+      frames.push(callback),
+    );
+    spyOn(extra.getDOMWindow(), "cancelAnimationFrame");
+    const apply = jasmine.createSpy("filter pixels");
+    view.runFilterOperation({ apply, defer: true });
+    expect(view.filterInProgress).toBeTrue();
+    frames.shift()();
+    const lateFrame = frames.shift();
+    await lumine.workspace.attachWindow(extra);
+    lateFrame();
+    await conditionPromise(() => apply.calls.count() === 1);
+    expect(view.filterInProgress).toBeFalse();
+    expect(view.deferredFilterRun).toBeNull();
+  });
+
   it("animates zoom using the clock of the image's current window", async () => {
     const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
     const view = image.view;
