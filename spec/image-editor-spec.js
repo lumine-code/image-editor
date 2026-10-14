@@ -167,7 +167,15 @@ describe("image-editor", () => {
       await Promise.all(files.map((file) => file.closed));
       await lumine.packages.deactivatePackage("image-editor");
       await lumine.fileWatchClient.settlePendingTeardown();
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      const relative = path.relative(fs.realpathSync(os.tmpdir()), fs.realpathSync(tempDir));
+      if (!relative || relative.startsWith("..") || path.isAbsolute(relative))
+        throw new Error("Unsafe image saving scratch directory");
+      await fs.promises.rm(tempDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 50,
+      });
     });
 
     async function openZoomedView() {
@@ -270,6 +278,12 @@ describe("image-editor", () => {
       await view.updateImageURI();
       await pollUntil(() => !view.refs.image.src.includes(`${stats.mtimeMs}-`));
       expect(view.refs.image.src).toContain(`${fs.statSync(tempPath).mtimeMs}-`);
+      await pollUntil(
+        () =>
+          view.refs.image.complete &&
+          view.refs.image.naturalWidth > 0 &&
+          !view.refs.loadingSpinner.classList.contains("visible"),
+      );
     });
 
     it("does no work when asked to reload a file that has not changed", async () => {
