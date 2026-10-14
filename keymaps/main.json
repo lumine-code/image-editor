@@ -1,4 +1,16 @@
 {
+  ".image-editor-list .select-list": {
+    "alt-enter": "image-editor:open-selected-with",
+    "shift-enter": "image-editor:open-selected-pending",
+    "ctrl-alt-enter": "image-editor:open-selected-external",
+    "ctrl-shift-enter": "image-editor:show-selected-in-folder"
+  },
+  ".image-editor-list .select-list lumine-text-editor[mini]": {
+    "alt-enter": "image-editor:open-selected-with",
+    "shift-enter": "image-editor:open-selected-pending",
+    "ctrl-alt-enter": "image-editor:open-selected-external",
+    "ctrl-shift-enter": "image-editor:show-selected-in-folder"
+  },
   ".image-editor": {
     "+": "image-editor:zoom-in",
     "=": "image-editor:zoom-in",

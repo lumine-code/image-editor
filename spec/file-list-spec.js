@@ -29,7 +29,7 @@ describe("image-editor folder list", () => {
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
     await lumine.packages.activatePackage("image-editor");
     ImageEditor = require("../lib/editor");
-    item = await lumine.workspace.open(samplePath, { pending: true });
+    item = await lumine.workspace.open(samplePath);
     view = item.view;
     await pollUntil(() => view.loaded && view.refs.image.complete);
   });
@@ -77,10 +77,10 @@ describe("image-editor folder list", () => {
     expect(view.fileListView.selectListHost.isVisible()).toBe(false);
   });
 
-  it("filters filenames without preview and opens the confirmed file in the source view", async () => {
-    const image = view.refs.image;
-    const element = item.element;
+  it("filters without preview and opens the registered default in the captured source pane", async () => {
     const load = spyOn(view, "loadImageFromNavigation").and.callThrough();
+    const opened = spyOn(lumine.workspace, "open").and.callThrough();
+    const sourcePane = lumine.workspace.paneForItem(item);
     const list = await showList();
     const unrelated = { unrelated: true };
     spyOn(lumine.workspace, "getActivePaneItem").and.returnValue(unrelated);
@@ -95,39 +95,31 @@ describe("image-editor folder list", () => {
 
     await list.confirmSelection();
 
-    expect(load).toHaveBeenCalledTimes(1);
-    const [loadedPath, options] = load.calls.mostRecent().args;
+    expect(load).not.toHaveBeenCalled();
+    const [loadedPath, options] = opened.calls.mostRecent().args;
     expect(loadedPath).toBe(otherPath);
     expect(typeof options.signal.addEventListener).toBe("function");
     expect(typeof options.signal.aborted).toBe("boolean");
-    expect(item.getPath()).toBe(otherPath);
-    expect(item.element).toBe(element);
-    expect(item.view).toBe(view);
-    expect(view.refs.image).toBe(image);
+    expect(options.pane).toBe(sourcePane);
+    expect(item.getPath()).toBe(samplePath);
+    expect(sourcePane.getActiveItem().getPath()).toBe(otherPath);
     expect(view.fileListView.selectListHost.isVisible()).toBe(false);
   });
 
-  it("keeps the edited image after Cancel and allows a second navigation attempt", async () => {
+  it("opens another image without asking to discard the source image's edits", async () => {
     view.invertColors();
     const editedState = view.historyManager.getCurrentState();
-    spyOn(lumine.window, "confirm").and.resolveTo(1);
+    spyOn(lumine.window, "confirm");
     const list = await showList();
     await list.selectItemById(list.getItems().find((row) => row.filePath === otherPath).id);
 
     await list.confirmSelection();
 
-    expect(lumine.window.confirm).toHaveBeenCalledTimes(1);
+    expect(lumine.window.confirm).not.toHaveBeenCalled();
     expect(item.getPath()).toBe(samplePath);
     expect(item.getFileState()).toBe("modified");
     expect(view.historyManager.getCurrentState()).toBe(editedState);
-    expect(view.fileListView.selectListHost.isVisible()).toBe(true);
-
-    lumine.window.confirm.and.resolveTo(2);
-    await list.confirmSelection();
-
-    expect(lumine.window.confirm).toHaveBeenCalledTimes(2);
-    expect(item.getPath()).toBe(otherPath);
-    expect(item.view).toBe(view);
+    expect(lumine.workspace.getActivePaneItem().getPath()).toBe(otherPath);
     expect(view.fileListView.selectListHost.isVisible()).toBe(false);
   });
 
@@ -209,6 +201,7 @@ describe("image-editor folder list lifecycle", () => {
       loadImageFromNavigation: jasmine.createSpy("loadImageFromNavigation").and.resolveTo(true),
     };
     picker = new (require("../lib/file-list"))(view);
+    spyOn(lumine.workspace, "open").and.resolveTo({});
   });
 
   afterEach(async () => {
@@ -248,7 +241,7 @@ describe("image-editor folder list lifecycle", () => {
     if (process.platform !== "win32") {
       await picker.selectList.selectItemById(rows[0].id);
       await picker.selectList.confirmSelection();
-      expect(view.loadImageFromNavigation.calls.mostRecent().args[0]).toBe(upperPath);
+      expect(lumine.workspace.open.calls.mostRecent().args[0]).toBe(upperPath);
     }
   });
 
@@ -273,13 +266,13 @@ describe("image-editor folder list lifecycle", () => {
   it("aborts an outstanding navigation when the picker is cancelled", async () => {
     await picker.show();
     let finish;
-    view.loadImageFromNavigation.and.callFake(() => new Promise((resolve) => (finish = resolve)));
+    lumine.workspace.open.and.callFake(() => new Promise((resolve) => (finish = resolve)));
     await picker.selectList.selectItemById(
       picker.rows.find((row) => row.filePath === otherPath).id,
     );
     const confirmation = picker.selectList.confirmSelection();
-    await pollUntil(() => view.loadImageFromNavigation.calls.count() === 1);
-    const signal = view.loadImageFromNavigation.calls.mostRecent().args[1].signal;
+    await pollUntil(() => lumine.workspace.open.calls.count() === 1);
+    const signal = lumine.workspace.open.calls.mostRecent().args[1].signal;
 
     picker.selectListHost.cancel();
 
@@ -292,9 +285,9 @@ describe("image-editor folder list lifecycle", () => {
   it("allows retry after a failed load changes the view's loading generation", async () => {
     await picker.show();
     let attempts = 0;
-    view.loadImageFromNavigation.and.callFake(async () => {
+    lumine.workspace.open.and.callFake(async () => {
       view.loadingAbortController = {};
-      return ++attempts > 1;
+      return ++attempts > 1 ? {} : undefined;
     });
     await picker.selectList.selectItemById(
       picker.rows.find((row) => row.filePath === otherPath).id,
