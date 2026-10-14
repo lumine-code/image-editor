@@ -34,6 +34,32 @@ describe("image presentation windows", () => {
     );
   }
 
+  it("animates zoom using the clock of the image's current window", async () => {
+    const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
+    const view = image.view;
+    const domWindow = extra.getDOMWindow();
+    view.element.style.height = "300px";
+    view.disableAutoZoom();
+    view.zoom = 1;
+    view.updateTransform({ immediate: true });
+    const frames = [];
+    spyOn(window.performance, "now").and.returnValue(20000);
+    spyOn(domWindow.performance, "now").and.returnValue(100);
+    spyOn(domWindow, "requestAnimationFrame").and.callFake((callback) => frames.push(callback));
+    spyOn(domWindow, "cancelAnimationFrame");
+    view.zoom = 2;
+    view.updateTransformSmooth(120);
+    frames[0](99);
+    const transform = () => new domWindow.DOMMatrix(view.refs.image.style.transform);
+    expect(transform().a).toBe(1);
+    frames[1](160);
+    expect(transform().a).toBeGreaterThan(1);
+    expect(transform().a).toBeLessThan(2);
+    frames[2](220);
+    expect(transform().a).toBe(2);
+    expect(view.smoothTransformRAF).toBeNull();
+  });
+
   it("fits resized image bounds before paint, without waiting for another animation frame", async () => {
     lumine.config.set("image-editor.autoZoomLimit", false);
     const view = image.view;
