@@ -1,16 +1,65 @@
 {
   "title": "image-editor",
   "description": "Inspect a plotted waveform in the image editor.",
-  "recordedOn": "2026-10-13",
-  "sourceRevision": "cd6bfb590aca8d49ba023fca626ec8001fc79be6",
+  "recordedOn": "2026-10-14",
+  "sourceRevision": "f5a8dcbaf9a185c87269193c425c7bd8be9bfaaf",
+  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
   "mode": "normal",
   "fontSettings": "default",
+  "scenario": "demo.js",
+  "recipeHash": "0655b618d1362f1a54bacdcfe6503591c71dcc489036b00458983c88be7b6b08",
+  "environment": {
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.7.0",
+    "chrome": "152.0.7977.130",
+    "devicePixelRatio": 1,
+    "locale": "en-GB",
+    "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+    "fontSize": 14,
+    "themes": ["one-day-syntax", "one-day-ui"]
+  },
+  "viewport": { "width": 1200, "height": 760 },
+  "cornerRadius": 10,
+  "sources": {
+    "editor": {
+      "revision": "d0b1751fffac65f10a405545e5f01cf7ad05c0bb",
+      "dirty": true,
+      "workingTreeHash": "9e1925be2839d18f5d0ab44707b99041e25a1ae20ebbfbfd58e9a92724c61a7a"
+    },
+    "package": {
+      "revision": "f5a8dcbaf9a185c87269193c425c7bd8be9bfaaf",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "image-editor": {
+      "revision": "f5a8dcbaf9a185c87269193c425c7bd8be9bfaaf",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "one-theme": {
+      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "data/notes.txt",
+      "sha256": "430bf4209b566ea98a3c188310eac37dc80e3c5ff8fa970670c1bcf1707f94fb"
+    },
+    {
+      "file": "data/waveform.png",
+      "sha256": "8c186360fa5ef0e2b39997955792ef750c9b52cd776ed36de5ec5d483e32e64b"
+    }
+  ],
   "images": [
     {
       "file": "demo.png",
       "label": "Inspect a plotted waveform in the image editor.",
       "width": 1200,
-      "height": 760
+      "height": 760,
+      "sha256": "81f65b0f78b1be7e6e0de01a2feed379c038b88c2e393d8a267ddf218311e082"
     }
   ]
 }
