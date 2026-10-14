@@ -88,7 +88,6 @@ Commands available in `.image-editor-list`:
 
 - `image-editor:open-selected-file`: open the selected image file with its default opener,
 - `image-editor:open-selected-with`: choose an opener for the selected file,
-- `image-editor:open-selected-pending`: open the selected file as a pending text editor,
 - `image-editor:open-selected-external`: open the selected file in its external application,
 - `image-editor:show-selected-in-folder`: reveal the selected file in the system file manager.
 
