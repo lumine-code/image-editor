@@ -76,6 +76,23 @@
     "ImageEditor": "deserialize"
   },
   "configSchema": {
+    "defaultExtensions": {
+      "title": "Default Extensions",
+      "description": "File extensions opened in Image Editor by default. Supports bmp, gif, ico, jpeg, jpg, png, webp, and svg. Entries may include a leading dot and are case-insensitive. An empty list disables automatic opening; Open… still offers Image Editor for supported images. Changes apply immediately to subsequent opens.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "bmp",
+        "gif",
+        "ico",
+        "jpeg",
+        "jpg",
+        "png",
+        "webp"
+      ]
+    },
     "defaultBackgroundColor": {
       "title": "Default Background Color",
       "type": "string",

@@ -40,6 +40,10 @@ describe("image-editor", () => {
   });
 
   describe("opener", () => {
+    afterEach(() => {
+      lumine.config.unset("image-editor.defaultExtensions");
+    });
+
     it("opens .png URIs as an ImageEditor pane item", async () => {
       const item = await lumine.workspace.open(samplePath);
       expect(item instanceof ImageEditor).toBe(true);
@@ -78,6 +82,34 @@ describe("image-editor", () => {
         isDefault: true,
         destinations: ["current", "new-window", "detached-window"],
       });
+    });
+
+    it("applies default extension changes immediately, accepting dots and mixed case", () => {
+      const svgPath = path.join(__dirname, "fixtures", "drawing.SVG");
+      const defaultOpener = (uri) => lumine.workspace.getAvailablePathOpeners(uri)[0].id;
+
+      lumine.config.set("image-editor.defaultExtensions", [" .SvG "]);
+      expect(defaultOpener(svgPath)).toBe("image-editor");
+      expect(defaultOpener(samplePath)).toBe("text-editor");
+
+      lumine.config.set("image-editor.defaultExtensions", ["PNG"]);
+      expect(defaultOpener(svgPath)).toBe("text-editor");
+      expect(defaultOpener(samplePath)).toBe("image-editor");
+    });
+
+    it("allows explicit image opening with no defaults and ignores unsupported extensions", async () => {
+      lumine.config.set("image-editor.defaultExtensions", []);
+      expect(lumine.workspace.getAvailablePathOpeners(samplePath)[0].id).toBe("text-editor");
+      const text = await lumine.workspace.open(samplePath);
+      expect(lumine.workspace.isTextEditor(text)).toBe(true);
+      const image = await lumine.workspace.open(samplePath, { opener: "image-editor" });
+      expect(image instanceof ImageEditor).toBe(true);
+
+      lumine.config.set("image-editor.defaultExtensions", ["js"]);
+      const sourcePath = path.join(__dirname, "image-editor-spec.js");
+      expect(lumine.workspace.getAvailablePathOpeners(sourcePath).map(({ id }) => id)).toEqual([
+        "text-editor",
+      ]);
     });
 
     it("closes image items before the package is deactivated", async () => {
