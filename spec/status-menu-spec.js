@@ -10,6 +10,7 @@ describe("Image Editor status action menu", () => {
     await lumine.packages.activatePackage("image-editor");
     image = await lumine.workspace.open(path.join(__dirname, "fixtures/sample.png"));
     await conditionPromise(() => image.view.loaded && tile()?.textContent.includes("2x2"));
+    image.view.element.focus();
   });
   afterEach(async () => {
     await lumine.packages.deactivatePackage("image-editor");
@@ -55,7 +56,7 @@ describe("Image Editor status action menu", () => {
         popup.close();
       }
       await lumine.workspace.open();
-      expect(lumine.contextMenu.templateForElement(element)[0].keyBindingLabel).toBe("");
+      expect(lumine.contextMenu.templateForElement(element)[0].keyBindingLabel).toBeUndefined();
     } finally {
       keys.dispose();
     }
