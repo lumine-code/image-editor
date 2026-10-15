@@ -112,11 +112,11 @@ describe("image-editor shared file opening actions", () => {
   }
 
   it("passes the selected filename and source pane to the chooser", async () => {
-    await lumine.packages.deactivatePackage("open-with");
+    await lumine.packages.deactivatePackage("launcher");
     const choose = jasmine.createSpy("choose image opener");
     leases.add(
       lumine.commands.add("lumine-workspace", {
-        "open-with:toggle": (event) => {
+        "launcher:open": (event) => {
           event.stopPropagation();
           choose(event.detail);
         },

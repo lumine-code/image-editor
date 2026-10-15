@@ -19,7 +19,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 
 Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes. The folder picker uses the selected file's default opener and also offers other opening actions.
 
-Use Open With… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
+Use Open… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
 
 ![Inspect a plotted waveform in the image editor.](.github/demo.png)
 

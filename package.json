@@ -147,7 +147,7 @@
     }
   },
   "specPackages": [
-    "open-with",
+    "launcher",
     "open-external"
   ]
 }
