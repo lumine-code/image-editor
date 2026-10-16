@@ -49,4 +49,13 @@ describe("image command availability", () => {
       lease.dispose();
     }
   });
+  it("rejects direct crop and canvas mutation before touching pixels in a read-only view", () => {
+    const View = require("../lib/view");
+    const view = Object.create(View.prototype);
+    view.readOnly = true;
+    view.deferSharedPixelOperation = jasmine.createSpy("queue pixel operation");
+    view.cropToSelection();
+    view.resizeCanvasToSelection();
+    expect(view.deferSharedPixelOperation).not.toHaveBeenCalled();
+  });
 });
