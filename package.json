@@ -21,9 +21,6 @@
     "lumine": "^1.0.0"
   },
   "main": "./lib/main",
-  "specPackages": [
-    "tree-view"
-  ],
   "files": [
     "assets",
     "docs",
@@ -172,6 +169,7 @@
     }
   },
   "specPackages": [
+    "tree-view",
     "launcher",
     "open-external"
   ]
