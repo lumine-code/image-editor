@@ -60,7 +60,7 @@ describe("shared image snapshots", () => {
     expect(captured).toBe(false);
     publish();
     const state = JSON.parse(JSON.stringify(await capture));
-    expect(Object.keys(state.packageStates["image-editor"].documents).length).toBe(1);
+    expect(Object.keys(state.documentStates["image-editor"].documents).length).toBe(1);
     await lumine.deserialize(state);
     const views = lumine.workspace.getPaneItems().filter((item) => item instanceof Editor);
     expect(views.length).toBe(2);
