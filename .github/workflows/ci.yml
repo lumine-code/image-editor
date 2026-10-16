@@ -169,9 +169,11 @@ jobs:
           NODE
           # Run the identical native assertions against the historical runtime;
           # its unrelated old pane fixtures target a retired Core contract.
-          # Xvfb's authority directory belongs outside test-owned scratch space.
+          # Keep Xauthority outside test-owned scratch space and supply its file
+          # explicitly so xvfb-run never owns a temporary directory to remove.
+          touch "$RUNNER_TEMP/image-original.xauthority"
           set +e
-          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum env TMPDIR="$TEMP" npm start -- --test ../image-editor-original/spec/native-path-ownership-spec.js > "$RUNNER_TEMP/image-original.log" 2>&1
+          TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum --auth-file "$RUNNER_TEMP/image-original.xauthority" env TMPDIR="$TEMP" npm start -- --test ../image-editor-original/spec/native-path-ownership-spec.js > "$RUNNER_TEMP/image-original.log" 2>&1
           original_status=$?
           set -e
           cat "$RUNNER_TEMP/image-original.log"
@@ -186,7 +188,8 @@ jobs:
         timeout-minutes: 20
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum env TMPDIR="$TEMP" npm start -- --test ../image-editor/spec
+            touch "$RUNNER_TEMP/image-current.xauthority"
+            TMPDIR="$RUNNER_TEMP" xvfb-run --auto-servernum --auth-file "$RUNNER_TEMP/image-current.xauthority" env TMPDIR="$TEMP" npm start -- --test ../image-editor/spec
           else
             npm start -- --test ../image-editor/spec
           fi
