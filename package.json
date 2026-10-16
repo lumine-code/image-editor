@@ -21,6 +21,9 @@
     "lumine": "^1.0.0"
   },
   "main": "./lib/main",
+  "specPackages": [
+    "tree-view"
+  ],
   "files": [
     "assets",
     "docs",
@@ -66,6 +69,11 @@
     "prettier": "^3.9.9"
   },
   "consumedServices": {
+    "tree-view.directory": {
+      "versions": {
+        "^1.0.0": "consumeTreeViewDirectory"
+      }
+    },
     "status-bar": {
       "versions": {
         "^2.0.0": "consumeStatusBar"

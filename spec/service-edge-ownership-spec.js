@@ -15,6 +15,7 @@ describe("Image service edge ownership", () => {
     temporary = fs.realpathSync.native(os.tmpdir());
     directory = fs.realpathSync.native(fs.mkdtempSync(path.join(temporary, "image-edges-owned-")));
     jasmine.attachToDOM(lumine.workspace.getElement());
+    await lumine.packages.activatePackage("tree-view");
     const pack = await lumine.packages.activatePackage("image-editor");
     main = pack.mainModule;
     for (const name of ["first.png", "second.png"])

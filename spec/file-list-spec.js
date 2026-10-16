@@ -27,6 +27,7 @@ describe("image-editor folder list", () => {
 
   beforeEach(async () => {
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
+    await lumine.packages.activatePackage("tree-view");
     await lumine.packages.activatePackage("image-editor");
     ImageEditor = require("../lib/editor");
     item = await lumine.workspace.open(samplePath);

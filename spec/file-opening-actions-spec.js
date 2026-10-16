@@ -16,6 +16,7 @@ describe("image-editor shared file opening actions", () => {
     targetPath = path.join(directory, "target.svg");
     fs.copyFileSync(path.join(__dirname, "fixtures", "sample.png"), sourcePath);
     fs.writeFileSync(targetPath, '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
+    await lumine.packages.activatePackage("tree-view");
     await lumine.packages.activatePackage("image-editor");
     external = (await lumine.packages.activatePackage("open-external")).mainModule;
     item = await lumine.workspace.open(sourcePath);

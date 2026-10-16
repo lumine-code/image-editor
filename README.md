@@ -7,7 +7,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 ## Features
 
 - **Zoom & pan**: zoom controls, keyboard shortcuts, and right-click drag to pan.
-- **Image browsing**: navigate between images in the same folder or search their filenames in a picker.
+- **Image browsing**: navigate between images in the same folder in tree-view order, respecting hidden files, or search their filenames in a picker.
 - **Transform tools**: rotate, flip, resize, and crop images.
 - **Color adjustments**: brightness, contrast, saturation, hue, and auto-adjust.
 - **Filters**: blur, sharpen, grayscale, sepia, posterize, and invert.
@@ -18,6 +18,8 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 - **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jupyter-repl](https://github.com/lumine-code/jupyter-repl) to display plot outputs.
 
 Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes. The folder picker uses the selected file's default opener and also offers other opening actions.
+
+Folder navigation uses the tree-view directory service, which follows its sorting and file visibility settings even with no project folder open. The service uses the default sorting when those settings are unavailable.
 
 Use Open… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
 
@@ -147,6 +149,7 @@ Left-click the image status tile to show image properties, or right-click it to 
 - [`image-editor`](docs/image-editor.md): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
 - `navigation.adapter`: provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
 - `status-bar`: consumed to show image dimensions, file size, and mouse position in the status bar.
+- `tree-view.directory`: consumed to browse images in the tree's order and respect its file visibility settings without opening the tree.
 
 ## Contributing
 

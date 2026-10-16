@@ -34,6 +34,7 @@ describe("image-editor", () => {
   beforeEach(async () => {
     workspaceElement = lumine.views.getView(lumine.workspace);
     jasmine.attachToDOM(workspaceElement);
+    await lumine.packages.activatePackage("tree-view");
     const pkg = await lumine.packages.activatePackage("image-editor");
     mainModule = pkg.mainModule;
     ImageEditor = createRequire(path.join(pkg.path, "package.json"))("./lib/editor");
@@ -1034,23 +1035,30 @@ describe("image-editor", () => {
   });
 
   describe("the directory listing", () => {
-    let item, view, readdir, reads;
+    let item, view, reads, directoryService;
 
     beforeEach(async () => {
+      await lumine.packages.deactivatePackage("tree-view");
+      reads = 0;
+      directoryService = lumine.packages.serviceHub.provide("tree-view.directory", "1.0.0", {
+        async listFiles() {
+          reads++;
+          return [otherPath, samplePath];
+        },
+        watchDirectory() {
+          return { ready: Promise.resolve(), dispose() {} };
+        },
+        onDidChange() {
+          return { dispose() {} };
+        },
+      });
       item = await lumine.workspace.open(samplePath);
       view = item.view;
       await pollUntil(() => view.loaded);
-
-      readdir = fs.promises.readdir;
-      reads = 0;
-      fs.promises.readdir = (...args) => {
-        reads++;
-        return readdir(...args);
-      };
     });
 
     afterEach(() => {
-      fs.promises.readdir = readdir;
+      directoryService.dispose();
       for (const paneItem of lumine.workspace.getPaneItems()) {
         if (paneItem instanceof ImageEditor) paneItem.destroy();
       }
@@ -1130,10 +1138,11 @@ describe("image-editor", () => {
       expect(view.navigator.fileListCache.files).toEqual(before);
     });
 
-    it("is invalidated by a file event, without reaching through the view getter", async () => {
+    it("is invalidated by its provider without reaching through the view getter", async () => {
       // The getter builds a view when there is none, running statSync and
-      // starting a load, so a file event anywhere in the project would have
+      // starting a load, so a policy change would have
       // materialized one for every image tab that had so far avoided it.
+      await view.getFileList();
       let getterCalls = 0;
       const inherited = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(item), "view");
       Object.defineProperty(item, "view", {
@@ -1145,9 +1154,7 @@ describe("image-editor", () => {
       });
 
       try {
-        mainModule.handleFileSystemChanges([
-          { path: path.join(__dirname, "fixtures", "added.png"), action: "created" },
-        ]);
+        mainModule.invalidateNavigationCaches();
 
         expect(getterCalls).toBe(0);
         expect(view.navigator.fileListCache.directoryKey).toBe(null);

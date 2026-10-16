@@ -10,6 +10,7 @@ describe("image native path ownership", () => {
     for (const method of ["openExternal", "openPath", "showItemInFolder", "openApplication"])
       spyOn(lumine.shell, method).and.resolveTo();
     spyOn(lumine.application, "openWindow").and.resolveTo();
+    await lumine.packages.activatePackage("tree-view");
     pack = await lumine.packages.activatePackage("image-editor");
     const requireCurrent = require("node:module").createRequire(
       path.join(pack.path, "package.json"),
@@ -72,7 +73,10 @@ describe("image native path ownership", () => {
     const file = image("alias.png");
     const alias = path.join(directory, "ALIAS.PNG");
     if (!fs.existsSync(alias)) {
-      expect((await new ImageNavigator().getFileList(alias)).currentIndex).toBe(-1);
+      const navigator = new ImageNavigator({
+        listDirectoryFiles: (directory) => pack.mainModule.listDirectoryFiles(directory),
+      });
+      expect((await navigator.getFileList(alias)).currentIndex).toBe(-1);
       return;
     }
     expect(fs.statSync(alias).ino).toBe(fs.statSync(file).ino);
