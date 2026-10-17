@@ -124,6 +124,28 @@ describe("image-editor folder list", () => {
     expect(view.fileListView.selectListHost.isVisible()).toBe(false);
   });
 
+  it("opens repeatedly without replacing the pending image that owns the kept-open list", async () => {
+    const pane = lumine.workspace.paneForItem(item);
+    pane.setPendingItem(item);
+    lumine.config.set("core.allowPendingPaneItems", true);
+    const list = await showList();
+    const host = view.fileListView.selectListHost;
+    const opened = spyOn(lumine.workspace, "open").and.callThrough();
+    await list.runAction("select-list:toggle-keep-open");
+    await list.selectItemById(list.getItems().find((row) => row.filePath === otherPath).id);
+
+    await list.confirmSelection();
+
+    expect(opened.calls.mostRecent().args[1].pending).toBe(true);
+    expect(item.destroyed).toBe(false);
+    expect(host.isVisible()).toBe(true);
+    await list.selectItemById(list.getItems().find((row) => row.filePath === samplePath).id);
+    await list.confirmSelection();
+    expect(opened).toHaveBeenCalledTimes(2);
+    expect(host.isVisible()).toBe(true);
+    expect(pane.getActiveItem()).toBe(item);
+  });
+
   it("keeps its command and shortcut on the image surface and out of the application menu", () => {
     const show = spyOn(view, "showFileList");
     const workspace = lumine.views.getView(lumine.workspace);
