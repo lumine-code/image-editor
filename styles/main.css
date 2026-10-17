@@ -516,3 +516,11 @@
     color: var(--text-color-highlight);
   }
 }
+
+/* Respect reduced motion while retaining visible status indicators. */
+@media (prefers-reduced-motion: reduce) {
+  .image-editor .image-controls .loading-spinner-right::after,
+  .image-editor .boundary-overlay.active {
+    animation: none;
+  }
+}
