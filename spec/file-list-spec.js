@@ -86,8 +86,7 @@ describe("image-editor folder list", () => {
     const unrelated = { unrelated: true };
     spyOn(lumine.workspace, "getActivePaneItem").and.returnValue(unrelated);
 
-    list.getQueryEditor().setText("other");
-    await lumine.views.getNextUpdatePromise();
+    await list.setQuery("other");
     expect(list.getFilteredItems().map((row) => row.filePath)).toEqual([otherPath]);
     expect(list.getElement().querySelectorAll(".character-match").length).toBeGreaterThan(0);
     await list.selectItemById(list.getFilteredItems()[0].id);
