@@ -52,7 +52,12 @@ describe("image-editor shared file opening actions", () => {
       path.isAbsolute(relative)
     )
       throw new Error("Image opening scratch directory escaped the temporary root");
-    await fs.promises.rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.promises.rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 50,
+    });
   });
 
   async function click(modifiers) {
