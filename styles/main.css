@@ -10,6 +10,8 @@
   /* Image Controls ------------------- */
 
   .image-controls {
+    --zoom-button-background: var(--button-background-color);
+    --zoom-button-hover-background: var(--button-background-color-hover);
     position: absolute;
     top: 0;
     left: 0;
@@ -57,18 +59,23 @@
       min-width: 5em;
 
       &[data-zoom-mode="fit-image"] {
-        background-color: color-mix(
-          in srgb,
-          var(--ui-site-color-2) 35%,
-          var(--button-background-color)
-        );
+        --zoom-mode-color: var(--ui-site-color-2);
       }
 
       &[data-zoom-mode="fit-width"] {
-        background-color: color-mix(
+        --zoom-mode-color: var(--ui-site-color-3);
+      }
+
+      &:is([data-zoom-mode="fit-image"], [data-zoom-mode="fit-width"]) {
+        --button-background-color: color-mix(
           in srgb,
-          var(--ui-site-color-3) 35%,
-          var(--button-background-color)
+          var(--zoom-mode-color) 35%,
+          var(--zoom-button-background)
+        );
+        --button-background-color-hover: color-mix(
+          in srgb,
+          var(--zoom-mode-color) 35%,
+          var(--zoom-button-hover-background)
         );
       }
     }

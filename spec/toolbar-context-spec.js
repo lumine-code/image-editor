@@ -25,6 +25,17 @@ describe("image toolbar context events", () => {
     return event;
   }
 
+  function wheel(target, deltaY, options = {}) {
+    const event = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY,
+      ...options,
+    });
+    target.dispatchEvent(event);
+    return event;
+  }
+
   async function imageReady(width, height) {
     const image = item.view.refs.image;
     await conditionPromise(
@@ -127,6 +138,119 @@ describe("image toolbar context events", () => {
     button.focus();
     button.click();
     expect(document.activeElement).toBe(button);
+  });
+
+  it("smoothly zooms around the view center with wheel and fractional trackpad deltas over the scale", async () => {
+    const view = item.view;
+    const button = view.refs.zoomToFitButton;
+    view.resetZoom();
+    await conditionPromise(() => view.renderedTransform?.zoom === 1);
+    const zoom = spyOn(view, "zoomToCenterPoint").and.callThrough();
+    expect(wheel(button, -40).defaultPrevented).toBe(true);
+    expect(view.zoom).toBeCloseTo(Math.exp(0.08), 10);
+    expect(zoom.calls.mostRecent().args[1]).toEqual({ smooth: true });
+    expect(view.auto).toBe(false);
+    wheel(button, 40);
+    expect(view.zoom).toBeCloseTo(1, 10);
+    wheel(button, -0.25);
+    const expected = Math.exp(0.0005);
+    expect(view.zoom).toBeCloseTo(expected, 10);
+    await conditionPromise(() => view.renderedTransform?.zoom === view.zoom);
+    expect(view.renderedTransform.zoom).toBeCloseTo(expected, 10);
+  });
+
+  it("normalizes line and page wheel deltas over the scale", () => {
+    const view = item.view;
+    const button = view.refs.zoomToFitButton;
+    const height = view.refs.imageContainer.clientHeight;
+    expect(height).toBeGreaterThan(0);
+    view.resetZoom();
+    wheel(button, -2, { deltaMode: WheelEvent.DOM_DELTA_LINE });
+    expect(view.zoom).toBeCloseTo(Math.exp(0.064), 10);
+    view.resetZoom();
+    wheel(button, 0.25, { deltaMode: WheelEvent.DOM_DELTA_PAGE });
+    expect(view.zoom).toBeCloseTo(Math.exp(-height * 0.25 * 0.002), 10);
+  });
+
+  it("keeps scale wheel zoom independent of navigation settings, modifiers and focus", () => {
+    const view = item.view;
+    const button = view.refs.zoomToFitButton;
+    const previous = lumine.config.get("image-editor.switchZoomAndNavigation");
+    const next = spyOn(view, "nextImage");
+    const back = spyOn(view, "previousImage");
+    const bubble = jasmine.createSpy("wheel bubble");
+    view.element.addEventListener("wheel", bubble);
+    try {
+      for (const setting of [false, true]) {
+        lumine.config.set("image-editor.switchZoomAndNavigation", setting);
+        for (const options of [{}, { ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+          view.resetZoom();
+          view.element.focus();
+          expect(wheel(button, -30, options).defaultPrevented).toBe(true);
+          expect(view.zoom).toBeCloseTo(Math.exp(0.06), 10);
+          expect(document.activeElement).toBe(view.element);
+        }
+      }
+      button.focus();
+      wheel(button, 30);
+      expect(document.activeElement).toBe(button);
+      expect(next).not.toHaveBeenCalled();
+      expect(back).not.toHaveBeenCalled();
+      expect(bubble).not.toHaveBeenCalled();
+    } finally {
+      lumine.config.set("image-editor.switchZoomAndNavigation", previous);
+      view.element.removeEventListener("wheel", bubble);
+    }
+  });
+
+  it("captures scale wheel events at zoom bounds and releases the listener on destruction", () => {
+    const view = item.view;
+    const button = view.refs.zoomToFitButton;
+    view.zoomToCenterPoint(view.zoomController.maxZoom);
+    expect(wheel(button, -100).defaultPrevented).toBe(true);
+    expect(view.zoom).toBe(view.zoomController.maxZoom);
+    view.zoomToCenterPoint(view.zoomController.minZoom);
+    expect(wheel(button, 100).defaultPrevented).toBe(true);
+    expect(view.zoom).toBe(view.zoomController.minZoom);
+    const zoom = spyOn(view, "zoomToCenterPoint").and.callThrough();
+    item.destroy();
+    item = null;
+    expect(wheel(button, -100).defaultPrevented).toBe(false);
+    expect(zoom).not.toHaveBeenCalled();
+  });
+
+  it("ignores scale wheel events without vertical movement, loading images and already handled events", () => {
+    const view = item.view;
+    const button = view.refs.zoomToFitButton;
+    const zoom = spyOn(view, "zoomToCenterPoint").and.callThrough();
+    expect(wheel(button, 0, { deltaX: 30 }).defaultPrevented).toBe(false);
+    view.loaded = false;
+    expect(wheel(button, -30).defaultPrevented).toBe(false);
+    view.loaded = true;
+    const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: -30 });
+    event.preventDefault();
+    button.dispatchEvent(event);
+    expect(zoom).not.toHaveBeenCalled();
+  });
+
+  it("ignores inactive counter wheel events and removes its listener when the view is destroyed", () => {
+    const view = item.view;
+    const input = view.refs.imagePositionInput;
+    const count = view.refs.imagePositionCount;
+    const next = spyOn(view, "nextImage");
+    const previous = spyOn(view, "previousImage");
+    expect(wheel(count, 0, { deltaX: 30 }).defaultPrevented).toBe(false);
+    view.loaded = false;
+    expect(wheel(count, 30).defaultPrevented).toBe(false);
+    view.loaded = true;
+    const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: -30 });
+    event.preventDefault();
+    input.dispatchEvent(event);
+    item.destroy();
+    item = null;
+    expect(wheel(count, 30).defaultPrevented).toBe(false);
+    expect(next).not.toHaveBeenCalled();
+    expect(previous).not.toHaveBeenCalled();
   });
 
   it("opens zoom presets through the shared menu and dispatches the selected scale", async () => {
@@ -295,7 +419,7 @@ describe("image toolbar context events", () => {
     });
     button.style.setProperty("--ui-site-color-2", "rgb(20, 180, 50)");
     button.style.setProperty("--ui-site-color-3", "rgb(220, 120, 10)");
-    button.style.setProperty("--button-background-color", "rgb(230, 230, 230)");
+    view.element.style.setProperty("--button-background-color", "rgb(230, 230, 230)");
     const key = (value) =>
       lumine.keymaps.handleKeyboardEvent(
         lumine.keymaps.constructor.buildKeydownEvent(value, { target: view.element }),

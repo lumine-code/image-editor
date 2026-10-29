@@ -309,6 +309,65 @@ describe("image-editor tree directory navigation", () => {
     }
   });
 
+  it("navigates images with the wheel over the counter input and total, respecting boundaries and cycling", async () => {
+    provide(provider([last, original, copy]));
+    const input = view.refs.imagePositionInput;
+    const count = view.refs.imagePositionCount;
+    const cycle = lumine.config.get("image-editor.scrollCycle");
+    const scrollMode = lumine.config.get("image-editor.switchZoomAndNavigation");
+    const next = spyOn(view, "nextImage").and.callThrough();
+    const previous = spyOn(view, "previousImage").and.callThrough();
+    const zoom = spyOn(view, "zoomToCenterPoint");
+    const bubble = jasmine.createSpy("counter wheel bubble");
+    view.element.addEventListener("wheel", bubble);
+    await conditionPromise(() => input.value === "2");
+    async function step(target, deltaY, expected, options = {}) {
+      view.lastNavigationTime = 0;
+      const event = new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        deltaY,
+        ...options,
+      });
+      target.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      await (deltaY > 0 ? next : previous).calls.mostRecent().returnValue;
+      await conditionPromise(
+        () =>
+          image.getPath() === expected &&
+          view.loaded &&
+          input.value === String([last, original, copy].indexOf(expected) + 1),
+      );
+    }
+    try {
+      lumine.config.set("image-editor.scrollCycle", false);
+      lumine.config.set("image-editor.switchZoomAndNavigation", true);
+      view.element.focus();
+      await step(input, -0.25, last);
+      expect(document.activeElement).toBe(view.element);
+      input.focus();
+      input.value = "99";
+      await step(input, -1, last);
+      expect(input.value).toBe("1");
+      expect(document.activeElement).toBe(input);
+      view.element.focus();
+      await step(count, 80, original, { ctrlKey: true });
+      lumine.config.set("image-editor.switchZoomAndNavigation", false);
+      await step(input, 1, copy, { altKey: true });
+      await step(count, 1, copy);
+      lumine.config.set("image-editor.scrollCycle", true);
+      await step(count, 1, last);
+      await step(input, -1, copy, { metaKey: true });
+      expect(document.activeElement).toBe(view.element);
+      expect(zoom).not.toHaveBeenCalled();
+      expect(bubble).not.toHaveBeenCalled();
+    } finally {
+      lumine.config.set("image-editor.scrollCycle", cycle);
+      lumine.config.set("image-editor.switchZoomAndNavigation", scrollMode);
+      view.element.removeEventListener("wheel", bubble);
+    }
+  });
+
   it("refreshes visible navigation headers when the directory policy changes", async () => {
     const service = provider([last, original, copy]);
     provide(service);
