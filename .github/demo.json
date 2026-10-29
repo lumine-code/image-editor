@@ -2,7 +2,7 @@
   "title": "image-editor",
   "description": "Inspect a plotted waveform and its image metadata.",
   "recordedOn": "2026-10-29",
-  "sourceRevision": "780d183340beb572e284d26d0ed44879194ab13f",
+  "sourceRevision": "dbc75c4f6216dbe630465be0fa716aec938f6e86",
   "themeSourceRevision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
   "mode": "normal",
   "fontSettings": "default",
@@ -24,22 +24,22 @@
   "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "b569c426733b65e6e7ea16b00430f701a289996e",
+      "revision": "c4a6661a454b38a548e16d5d9400c59e96ee51f7",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "package": {
-      "revision": "780d183340beb572e284d26d0ed44879194ab13f",
+      "revision": "dbc75c4f6216dbe630465be0fa716aec938f6e86",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "image-editor": {
-      "revision": "780d183340beb572e284d26d0ed44879194ab13f",
+      "revision": "dbc75c4f6216dbe630465be0fa716aec938f6e86",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "metadata": {
-      "revision": "d3f23e1ba5d27d3ac2a21aa174d436901189f00a",
+      "revision": "a3e0758ef26b9ff8f48e194808a98e62d862a264",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
@@ -65,7 +65,7 @@
       "label": "Inspect a plotted waveform and its image metadata.",
       "width": 1200,
       "height": 760,
-      "sha256": "58c830db2eb4200bbfec2f4e7ba0b2f9505c2ff1832f5c9feb4157c881a9d9a3"
+      "sha256": "b641ce7086e108c88fa74fa7df2bb5d6486a01f1e136ac8433346819f179840a"
     }
   ]
 }
