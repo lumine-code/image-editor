@@ -17,13 +17,13 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 - **Navigation panel**: browse folder images via [navigation-panel](https://github.com/lumine-code/navigation-panel).
 - **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jupyter-repl](https://github.com/lumine-code/jupyter-repl) to display plot outputs.
 
+![Inspect a plotted waveform and its image metadata.](.github/demo.png)
+
 Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes. The folder picker uses the selected file's default opener and also offers other opening actions.
 
 Folder navigation uses the tree-view directory service, which follows its sorting and file visibility settings even with no project folder open. The service uses the default sorting when those settings are unavailable.
 
 Use Open… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
-
-![Inspect a plotted waveform in the image editor.](.github/demo.png)
 
 ## Installation
 

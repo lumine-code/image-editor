@@ -1,18 +1,18 @@
 {
   "title": "image-editor",
-  "description": "Inspect a plotted waveform in the image editor.",
-  "recordedOn": "2026-10-14",
-  "sourceRevision": "f5a8dcbaf9a185c87269193c425c7bd8be9bfaaf",
-  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+  "description": "Inspect a plotted waveform and its image metadata.",
+  "recordedOn": "2026-10-29",
+  "sourceRevision": "780d183340beb572e284d26d0ed44879194ab13f",
+  "themeSourceRevision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
-  "recipeHash": "0655b618d1362f1a54bacdcfe6503591c71dcc489036b00458983c88be7b6b08",
+  "recipeHash": "8caf4e267094b506d9da5506a27f137526f751666ef4e3c7b29d6749bb7b0b37",
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.7.0",
-    "chrome": "152.0.7977.130",
+    "electron": "45.0.0",
+    "chrome": "156.0.8078.48",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -21,24 +21,30 @@
   },
   "viewport": { "width": 1200, "height": 760 },
   "cornerRadius": 10,
+  "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "d0b1751fffac65f10a405545e5f01cf7ad05c0bb",
-      "dirty": true,
-      "workingTreeHash": "9e1925be2839d18f5d0ab44707b99041e25a1ae20ebbfbfd58e9a92724c61a7a"
+      "revision": "b569c426733b65e6e7ea16b00430f701a289996e",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "package": {
-      "revision": "f5a8dcbaf9a185c87269193c425c7bd8be9bfaaf",
+      "revision": "780d183340beb572e284d26d0ed44879194ab13f",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "image-editor": {
-      "revision": "f5a8dcbaf9a185c87269193c425c7bd8be9bfaaf",
+      "revision": "780d183340beb572e284d26d0ed44879194ab13f",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "metadata": {
+      "revision": "d3f23e1ba5d27d3ac2a21aa174d436901189f00a",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "revision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
@@ -56,10 +62,10 @@
   "images": [
     {
       "file": "demo.png",
-      "label": "Inspect a plotted waveform in the image editor.",
+      "label": "Inspect a plotted waveform and its image metadata.",
       "width": 1200,
       "height": 760,
-      "sha256": "81f65b0f78b1be7e6e0de01a2feed379c038b88c2e393d8a267ddf218311e082"
+      "sha256": "58c830db2eb4200bbfec2f4e7ba0b2f9505c2ff1832f5c9feb4157c881a9d9a3"
     }
   ]
 }
