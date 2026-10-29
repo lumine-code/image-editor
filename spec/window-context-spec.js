@@ -156,17 +156,25 @@ describe("image presentation windows", () => {
     expect(move).toHaveBeenCalledTimes(2);
   });
 
-  it("uses a local status tile and opens properties in that image's document", async () => {
+  it("routes a detached image's status action through the metadata service", async () => {
     const extra = await lumine.workspace.detachPane(lumine.workspace.paneForItem(image));
     await conditionPromise(() =>
       extra.getElement().querySelector(".status-image")?.textContent.includes("2x2"),
     );
     const mainTile = lumine.workspace.getMainWindow().getElement().querySelector(".status-image");
     expect(mainTile.style.display).toBe("none");
-    extra.getElement().querySelector(".status-image").click();
-    await conditionPromise(() =>
-      extra.getDocument().body.querySelector(".image-editor-properties-dialog"),
-    );
+    const showForItem = jasmine.createSpy("show metadata").and.resolveTo();
+    const main = lumine.packages.getActivePackage("image-editor").mainModule;
+    const lease = main.consumeMetadata({ showForItem });
+    try {
+      extra.getElement().querySelector(".status-image").click();
+      expect(showForItem).toHaveBeenCalledOnceWith(image, { focus: true });
+      expect(showForItem.calls.mostRecent().args[0].element.ownerDocument).toBe(
+        extra.getDocument(),
+      );
+    } finally {
+      lease.dispose();
+    }
   });
 
   it("opens Save As in the image's window", async () => {

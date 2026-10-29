@@ -133,7 +133,7 @@ describe("image-editor tree directory navigation", () => {
     expect((await view.getFileList()).files).not.toContain(hidden);
   });
 
-  it("shows the same sequence in the picker, navigation headers and properties", async () => {
+  it("shows the same sequence in the picker, navigation headers and toolbar position", async () => {
     provide(provider([last, original, text, copy]));
 
     await view.showFileList();
@@ -150,16 +150,9 @@ describe("image-editor tree directory navigation", () => {
     expect(headers.map((header) => header.filePath)).toEqual([last, original, copy]);
     expect(headers.map((header) => header.currentCount)).toEqual([0, 1, 0]);
 
-    await view.showPropertiesDialog();
-    const backdrop = document.querySelector(".image-editor-dialog-backdrop");
-    try {
-      const position = Array.from(backdrop.querySelectorAll("tr")).find(
-        (row) => row.cells[0].textContent === "Position in folder:",
-      );
-      expect(position.cells[1].textContent).toBe("2 / 3");
-    } finally {
-      backdrop.querySelector("button").click();
-    }
+    await view.refreshImagePosition();
+    expect(view.refs.imagePositionInput.value).toBe("2");
+    expect(view.refs.imagePositionCount.textContent).toBe("/ 3");
   });
 
   it("invalidates an existing view when the provider changes order or visibility", async () => {

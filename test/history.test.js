@@ -201,7 +201,7 @@ describe("walking the history", () => {
     assert.equal(history.redo(), null);
   });
 
-  it("reports position for the properties dialog", () => {
+  it("reports position for image metadata", () => {
     const history = new HistoryManager();
     record(history);
     record(history);
