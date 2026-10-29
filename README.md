@@ -142,10 +142,11 @@ module.exports = {
 
 The opened image will be marked as "modified" and prompt the user to save when closing.
 
-Left-click the image status tile to show image properties, or right-click it to choose Image Properties from its context menu.
+With Metadata available, left-click the image status tile to inspect its file and image metadata, or right-click it to choose Image Properties from its context menu. Image dimensions follow unsaved edits, including images opened from data URLs.
 
 ## Services
 
+- `metadata`: consumed to open the shared metadata panel for the current image.
 - [`image-editor`](docs/image-editor.md): provided to let other packages open images from data URLs without saving to disk — exposes `openFromDataUrl(dataUrl, title)`.
 - `navigation.adapter`: provided to [navigation-panel](https://github.com/lumine-code/navigation-panel) to list all images of the current folder; clicking an entry loads that image in the same editor.
 - `status-bar`: consumed to show image dimensions, file size, and mouse position in the status bar.

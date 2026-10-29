@@ -66,6 +66,11 @@
     "prettier": "^3.9.10"
   },
   "consumedServices": {
+    "metadata": {
+      "versions": {
+        "^1.0.0": "consumeMetadata"
+      }
+    },
     "tree-view.directory": {
       "versions": {
         "^1.0.0": "consumeTreeViewDirectory"

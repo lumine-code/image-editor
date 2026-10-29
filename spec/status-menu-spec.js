@@ -1,18 +1,21 @@
 const path = require("node:path");
 
 describe("Image Editor status action menu", () => {
-  let image;
+  let image, metadata, metadataLease;
   const tile = () => lumine.workspace.getElement().querySelector(".status-image");
   beforeEach(async () => {
     jasmine.useRealClock();
     jasmine.attachToDOM(lumine.workspace.getElement());
     await lumine.packages.activatePackage("status-bar");
-    await lumine.packages.activatePackage("image-editor");
+    const pack = await lumine.packages.activatePackage("image-editor");
+    metadata = { showForItem: jasmine.createSpy("showForItem").and.resolveTo() };
+    metadataLease = pack.mainModule.consumeMetadata(metadata);
     image = await lumine.workspace.open(path.join(__dirname, "fixtures/sample.png"));
     await conditionPromise(() => image.view.loaded && tile()?.textContent.includes("2x2"));
     image.view.element.focus();
   });
   afterEach(async () => {
+    metadataLease.dispose();
     await lumine.packages.deactivatePackage("image-editor");
   });
   it("offers properties and opens the same view exactly once through either input", async () => {
@@ -20,13 +23,14 @@ describe("Image Editor status action menu", () => {
     const menu = lumine.contextMenu.templateForElement(element);
     expect(menu.map((item) => item.command)).toEqual(["image-editor:show-properties"]);
     const [tooltip] = lumine.tooltips.findTooltips(element);
-    expect(tooltip.getTitle()).toContain("Click to show image properties.");
-    const properties = spyOn(image.view, "showPropertiesDialog");
+    expect(tooltip.getTitle()).toContain("Click to show image metadata.");
+    const properties = metadata.showForItem;
     element.dispatchEvent(new MouseEvent("click", { button: 2, bubbles: true }));
     lumine.contextMenu.templateForElement(element);
     expect(properties).not.toHaveBeenCalled();
     element.click();
     expect(properties).toHaveBeenCalledTimes(1);
+    expect(properties).toHaveBeenCalledWith(image, { focus: true });
     await lumine.commands.dispatch(element, menu[0].command);
     expect(properties).toHaveBeenCalledTimes(2);
   });

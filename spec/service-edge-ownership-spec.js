@@ -114,47 +114,4 @@ describe("Image service edge ownership", () => {
     provide("status-bar", service);
     expect(service.root.querySelector(".status-image").textContent).toContain("2x2");
   });
-  it("does not publish properties after its image closes during the owned directory read", async () => {
-    const view = image.view;
-    view.navigator.invalidateCache();
-    const readdir = fs.promises.readdir.bind(fs.promises);
-    const entries = await readdir(directory);
-    let release,
-      entered = false;
-    const held = new Promise((resolve) => (release = resolve));
-    spyOn(fs.promises, "readdir").and.callFake((target, ...args) => {
-      if (target !== directory) return readdir(target, ...args);
-      entered = true;
-      return held;
-    });
-    const show = spyOn(view, "showPropertiesDialog").and.callThrough();
-    const listen = spyOn(document, "addEventListener").and.callThrough();
-    lumine.commands.dispatch(image.element, "image-editor:show-properties");
-    const opening = show.calls.mostRecent().returnValue.catch((error) => error);
-    await conditionPromise(() => entered);
-    await lumine.workspace.paneForItem(image).destroyItem(image, true);
-    release(entries);
-    const result = await opening;
-    const backdrop = document.querySelector(".image-editor-dialog-backdrop");
-    try {
-      expect(result).toBeUndefined();
-      expect(backdrop).toBeNull();
-    } finally {
-      for (const [type, listener] of listen.calls.allArgs())
-        if (type === "keydown") document.removeEventListener(type, listener);
-      backdrop?.remove();
-    }
-  });
-  it("opens ordinary live image properties from the current command", async () => {
-    const show = spyOn(image.view, "showPropertiesDialog").and.callThrough();
-    lumine.commands.dispatch(image.element, "image-editor:show-properties");
-    await show.calls.mostRecent().returnValue;
-    const backdrop = document.querySelector(".image-editor-dialog-backdrop");
-    try {
-      expect(backdrop?.textContent).toContain("first.png");
-      expect(backdrop?.textContent).toContain("Position in folder");
-    } finally {
-      backdrop?.querySelector("button")?.click();
-    }
-  });
 });
