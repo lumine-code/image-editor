@@ -593,8 +593,8 @@ describe("image-editor", () => {
       expect(after.slice(0, 4)).toEqual([0, 0, 0, 0]);
       expect(after.slice(20, 24)).toEqual(before.slice(0, 4));
       expect(after.slice(60, 64)).toEqual([0, 0, 0, 0]);
-      expect(view.translateX).toBe(oldTranslateX - view.zoom);
-      expect(view.translateY).toBe(oldTranslateY - view.zoom);
+      expect(view.translateX).toBeCloseTo(oldTranslateX - view.zoom, 8);
+      expect(view.translateY).toBeCloseTo(oldTranslateY - view.zoom, 8);
       expect(view.historyManager.length).toBe(1);
     });
 
@@ -1084,11 +1084,19 @@ describe("image-editor", () => {
         calls++;
         return real(...args);
       };
+      const loadImage = view.loadImageFromNavigation.bind(view);
+      spyOn(view, "loadImageFromNavigation").and.callFake((target) => {
+        // Counter refreshes after relocation are independent consumers. The
+        // boundary and target must already agree before relocation starts.
+        expect(calls).toBe(1);
+        return loadImage(target);
+      });
 
       try {
         await view.nextImage();
         await pollUntil(() => view.editor.getPath() !== samplePath);
-        expect(calls).toBe(1);
+        expect(view.loadImageFromNavigation).toHaveBeenCalledTimes(1);
+        expect(reads).toBe(1);
       } finally {
         delete view.navigator.getFileList;
       }

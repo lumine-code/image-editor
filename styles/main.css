@@ -26,10 +26,23 @@
     }
 
     .btn-group {
+      display: flex;
+      max-width: calc(100% - 40px);
+      overflow-x: auto;
       margin: 0 var(--spacing) var(--spacing);
       pointer-events: auto; /* Make buttons clickable */
-      background-color: color-mix(in srgb, var(--tool-panel-background-color) 85%, transparent);
+      /* Native disabled buttons blend into this surface, never the image. */
+      background-color: var(--tool-panel-background-color);
       border-radius: 0 0 var(--ui-border-radius) var(--ui-border-radius);
+
+      > .btn {
+        border-top-width: 0;
+        font-variant-numeric: tabular-nums;
+
+        &:disabled {
+          cursor: default;
+        }
+      }
 
       .btn:first-child {
         border-top-left-radius: 0;
@@ -42,6 +55,49 @@
 
     .zoom-to-fit-button {
       min-width: 5em;
+
+      &[data-zoom-mode="fit-image"] {
+        background-color: color-mix(
+          in srgb,
+          var(--ui-site-color-2) 35%,
+          var(--button-background-color)
+        );
+      }
+
+      &[data-zoom-mode="fit-width"] {
+        background-color: color-mix(
+          in srgb,
+          var(--ui-site-color-3) 35%,
+          var(--button-background-color)
+        );
+      }
+    }
+
+    .image-position-field {
+      display: flex;
+      align-items: center;
+      gap: 0.35em;
+    }
+
+    .image-position-input {
+      min-width: 2ch;
+      padding: 0;
+      border: none;
+      color: inherit;
+      background: transparent;
+      font: inherit;
+      text-align: center;
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+      }
+    }
+
+    .image-position-count {
+      color: var(--text-color-subtle);
+      font: inherit;
     }
 
     .loading-spinner-right {
@@ -76,6 +132,7 @@
     overflow: hidden;
     position: relative;
     cursor: default;
+    background-color: var(--app-background-color);
 
     &.grabbing {
       cursor: grabbing;
@@ -237,25 +294,6 @@
     &.active {
       animation: boundary-flash 0.8s ease-out;
     }
-  }
-
-  /* Background color */
-  [background="native"] {
-    background-color: var(--app-background-color);
-  }
-
-  [background="white"] {
-    background-color: white;
-    background-image: url("lumine://image-editor/assets/transparent.png");
-  }
-
-  [background="black"] {
-    background-color: black;
-    background-image: url("lumine://image-editor/assets/transparent.png");
-  }
-
-  [background="transparent"] {
-    background-image: url("lumine://image-editor/assets/transparent.png");
   }
 }
 

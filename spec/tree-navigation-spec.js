@@ -175,6 +175,140 @@ describe("image-editor tree directory navigation", () => {
     expect(service.listFiles).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps the toolbar counter in sync with the shared ordered listing and disables unavailable positions", async () => {
+    const service = provider([last, text, original, copy]);
+    const edge = provide(service);
+    const input = view.refs.imagePositionInput;
+    const count = view.refs.imagePositionCount;
+    await conditionPromise(
+      () => !input.disabled && input.value === "2" && count.textContent === "/ 3",
+    );
+    await view.getFileList();
+    expect(service.listFiles).toHaveBeenCalledTimes(1);
+    await navigate("image-editor:next-image", copy);
+    await conditionPromise(() => input.value === "3");
+    service.change([copy, original]);
+    await conditionPromise(() => input.value === "1" && count.textContent === "/ 2");
+    service.change([original]);
+    await conditionPromise(() => input.disabled);
+    expect(input.value).toBe("");
+    expect(count.textContent).toBe("/ –");
+    edge.dispose();
+    expect(input.disabled).toBe(true);
+  });
+
+  it("places an editable image number immediately before zoom and navigates with Enter or cancels with Escape", async () => {
+    provide(provider([last, original, copy]));
+    const input = view.refs.imagePositionInput;
+    const field = view.refs.imagePosition;
+    await conditionPromise(() => !input.disabled);
+    expect(field.nextElementSibling).toBe(view.refs.zoomToFitButton);
+    expect(field.previousElementSibling).toBe(view.refs.zoomOutButton);
+    input.focus();
+    const resetZoom = spyOn(view, "resetZoom");
+    const keyEvent = lumine.keymaps.constructor.buildKeydownEvent("7", { target: input });
+    lumine.keymaps.handleKeyboardEvent(keyEvent);
+    expect(keyEvent.defaultPrevented).toBe(false);
+    expect(resetZoom).not.toHaveBeenCalled();
+    input.value = "3";
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" }),
+    );
+    await conditionPromise(() => image.getPath() === copy && view.loaded && input.value === "3");
+    await view.imagePositionCommit;
+    expect(document.activeElement).toBe(view.element);
+    input.focus();
+    input.value = "1";
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" }),
+    );
+    expect(input.value).toBe("3");
+    expect(image.getPath()).toBe(copy);
+    expect(document.activeElement).toBe(view.element);
+    input.focus();
+    input.value = "999";
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    await view.imagePositionCommit;
+    expect(input.value).toBe("3");
+    expect(image.getPath()).toBe(copy);
+  });
+
+  it("keeps first/last bounded and updates previous/next cycling from the cached listing", async () => {
+    const buttons = [
+      view.refs.firstImageButton,
+      view.refs.prevImageButton,
+      view.refs.nextImageButton,
+      view.refs.lastImageButton,
+    ];
+    const disabled = () => buttons.map((button) => button.disabled);
+    const cycle = lumine.config.get("image-editor.scrollCycle");
+    lumine.config.set("image-editor.scrollCycle", false);
+    try {
+      expect(disabled()).toEqual([true, true, true, true]);
+      const service = provider([last, original, copy]);
+      const edge = provide(service);
+      await conditionPromise(() => view.refs.imagePositionInput.value === "2");
+      expect(disabled()).toEqual([false, false, false, false]);
+
+      await navigate("image-editor:last-image", copy);
+      await conditionPromise(() => view.refs.imagePositionInput.value === "3");
+      expect(disabled()).toEqual([false, false, true, true]);
+      expect(getComputedStyle(buttons[2]).cursor).toBe("default");
+      const nextImage = spyOn(view, "nextImage").and.callThrough();
+      const lastImage = spyOn(view, "lastImage").and.callThrough();
+      buttons[2].click();
+      buttons[3].click();
+      expect(nextImage).not.toHaveBeenCalled();
+      expect(lastImage).not.toHaveBeenCalled();
+
+      const scans = service.listFiles.calls.count();
+      lumine.config.set("image-editor.scrollCycle", true);
+      expect(disabled()).toEqual([false, false, false, true]);
+      expect(service.listFiles.calls.count()).toBe(scans);
+      view.lastNavigationTime = 0;
+      buttons[2].click();
+      await conditionPromise(
+        () => image.getPath() === last && view.loaded && view.refs.imagePositionInput.value === "1",
+      );
+      expect(nextImage).toHaveBeenCalledTimes(1);
+      expect(disabled()).toEqual([true, false, false, false]);
+      expect(getComputedStyle(buttons[0]).cursor).toBe("default");
+      const firstImage = spyOn(view, "firstImage").and.callThrough();
+      const previousImage = spyOn(view, "previousImage").and.callThrough();
+      buttons[0].click();
+      expect(firstImage).not.toHaveBeenCalled();
+
+      lumine.config.set("image-editor.scrollCycle", false);
+      expect(disabled()).toEqual([true, true, false, false]);
+      buttons[1].click();
+      expect(previousImage).not.toHaveBeenCalled();
+      expect(service.listFiles.calls.count()).toBe(scans);
+      lumine.config.set("image-editor.scrollCycle", true);
+      expect(disabled()).toEqual([true, false, false, false]);
+      view.lastNavigationTime = 0;
+      buttons[1].click();
+      await conditionPromise(
+        () => image.getPath() === copy && view.loaded && view.refs.imagePositionInput.value === "3",
+      );
+      expect(previousImage).toHaveBeenCalledTimes(1);
+
+      service.change([copy]);
+      await conditionPromise(() => view.refs.imagePositionCount.textContent === "/ 1");
+      expect(disabled()).toEqual([true, true, true, true]);
+      lumine.config.set("image-editor.scrollCycle", false);
+      expect(disabled()).toEqual([true, true, true, true]);
+      service.change([original]);
+      await conditionPromise(() => view.refs.imagePositionInput.disabled);
+      expect(disabled()).toEqual([true, true, true, true]);
+      lumine.config.set("image-editor.scrollCycle", true);
+      expect(disabled()).toEqual([true, true, true, true]);
+      edge.dispose();
+      expect(disabled()).toEqual([true, true, true, true]);
+    } finally {
+      lumine.config.set("image-editor.scrollCycle", cycle);
+    }
+  });
+
   it("refreshes visible navigation headers when the directory policy changes", async () => {
     const service = provider([last, original, copy]);
     provide(service);

@@ -177,27 +177,27 @@
           "order": 30
         },
         {
-          "label": "Preview Background",
+          "label": "Scroll",
           "submenu": [
             {
-              "label": "Theme Background",
-              "command": "image-editor:background-native"
+              "label": "Up",
+              "command": "image-editor:scroll-up"
             },
             {
-              "label": "White",
-              "command": "image-editor:background-white"
+              "label": "Down",
+              "command": "image-editor:scroll-down"
             },
             {
-              "label": "Black",
-              "command": "image-editor:background-black"
+              "label": "Left",
+              "command": "image-editor:scroll-left"
             },
             {
-              "label": "Transparency Grid",
-              "command": "image-editor:background-transparent"
+              "label": "Right",
+              "command": "image-editor:scroll-right"
             }
           ],
           "group": "image",
-          "order": 40
+          "order": 35
         },
         {
           "label": "Save",

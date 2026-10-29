@@ -98,17 +98,6 @@
         "webp"
       ]
     },
-    "defaultBackgroundColor": {
-      "title": "Default Background Color",
-      "type": "string",
-      "enum": [
-        "native",
-        "white",
-        "black",
-        "transparent"
-      ],
-      "default": "native"
-    },
     "autoSelectTolerance": {
       "title": "Auto-Select Tolerance",
       "description": "Color difference tolerance for auto-selection (0-255). Lower values require more similar colors to be considered background.",

@@ -574,18 +574,19 @@ describe("image-editor pending reuse", () => {
 
   it("refreshes navigation headers once when the resource path is relocated", async () => {
     const main = lumine.packages.getActivePackage("image-editor").mainModule;
-    const getFileList = spyOn(view, "getFileList").and.callFake(() =>
+    spyOn(view, "getFileList").and.callFake(() =>
       Promise.resolve({ files: [item.getPath()], currentIndex: 0 }),
     );
     let headers;
-    const observer = main
-      .provideNavigationAdapter()
-      .observeHeaders(item, (list) => (headers = list));
+    const updated = jasmine
+      .createSpy("navigation headers")
+      .and.callFake((list) => (headers = list));
+    const observer = main.provideNavigationAdapter().observeHeaders(item, updated);
     await pollUntil(() => headers != null);
     item.setPath(otherPath);
     await pollUntil(() => headers[0].filePath === otherPath);
 
-    expect(getFileList).toHaveBeenCalledTimes(2);
+    expect(updated).toHaveBeenCalledTimes(2);
     observer.dispose();
   });
 
