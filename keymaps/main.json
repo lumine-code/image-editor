@@ -41,6 +41,7 @@
     "c": "image-editor:copy-selection",
     "a": "image-editor:automatic-zoom",
     "q": "image-editor:auto-select",
+    "shift-q": "image-editor:auto-select-with-border",
     "w": "image-editor:fit-width",
     "e": "image-editor:select-visible-area",
     "z": "image-editor:undo",
