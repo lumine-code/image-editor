@@ -361,6 +361,112 @@ describe("image-editor tree directory navigation", () => {
     }
   });
 
+  describe("navigation away from unsaved edits", () => {
+    let confirm, replies, load, scrollMode;
+
+    beforeEach(async () => {
+      provide(provider([last, original, copy]));
+      scrollMode = lumine.config.get("image-editor.switchZoomAndNavigation");
+      lumine.config.set("image-editor.switchZoomAndNavigation", true);
+      replies = [];
+      confirm = spyOn(lumine.workspace.getWindowForElement(view.element), "confirm").and.callFake(
+        () => new Promise((resolve, reject) => replies.push({ resolve, reject })),
+      );
+      load = spyOn(view, "loadImageFromNavigation").and.callThrough();
+      view.invertColors();
+      await conditionPromise(
+        () =>
+          image.getFileState() === "modified" &&
+          view.historyManager.getCurrentState()?.settled &&
+          view.refs.image.complete,
+      );
+      await view.editor.document.pendingEdit?.promise;
+      await view.refreshImagePosition();
+    });
+
+    afterEach(() => {
+      lumine.config.set("image-editor.switchZoomAndNavigation", scrollMode);
+    });
+
+    async function startWheel(target, deltaY) {
+      const count = load.calls.count();
+      // Each event represents a fresh gesture after both debounce delays.
+      view.lastWheelTime = 0;
+      view.lastNavigationTime = 0;
+      target.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY }));
+      await conditionPromise(() => load.calls.count() === count + 1);
+      return { result: load.calls.mostRecent().returnValue };
+    }
+
+    it("keeps one prompt across wheel gestures and commands, and permits another after Cancel", async () => {
+      const first = await startWheel(view.refs.imageContainer, 120);
+      await conditionPromise(() => confirm.calls.count() === 1);
+      const currentLoad = view.loadingAbortController;
+
+      const repeated = await startWheel(view.refs.imageContainer, 120);
+      const counter = await startWheel(view.refs.imagePositionInput, -120);
+      const total = await startWheel(view.refs.imagePositionCount, 120);
+      await view.firstImage();
+      await view.lastImage();
+      await view.loadImageFromNavigation(last);
+
+      expect(confirm).toHaveBeenCalledTimes(1);
+      expect(view.loadingAbortController).toBe(currentLoad);
+      expect(image.getPath()).toBe(original);
+      replies[0].resolve(1);
+      await Promise.all([first.result, repeated.result, counter.result, total.result]);
+      expect(image.getPath()).toBe(original);
+      expect(image.getFileState()).toBe("modified");
+
+      const retry = await startWheel(view.refs.imagePositionCount, 120);
+      await conditionPromise(() => confirm.calls.count() === 2);
+      replies[1].resolve(1);
+      await retry.result;
+      expect(image.getPath()).toBe(original);
+      expect(image.getFileState()).toBe("modified");
+    });
+
+    it("finishes the original requested image after Don't Save despite later wheel gestures", async () => {
+      const first = await startWheel(view.refs.imageContainer, -120);
+      await conditionPromise(() => confirm.calls.count() === 1);
+      expect(load.calls.first().args[0]).toBe(copy);
+      const later = await startWheel(view.refs.imagePositionInput, -120);
+      await view.firstImage();
+
+      expect(confirm).toHaveBeenCalledTimes(1);
+      replies[0].resolve(2);
+      const results = await Promise.all([first.result, later.result]);
+      expect(results[0]).toBe(true);
+      expect(image.getPath()).toBe(copy);
+      expect(image.getFileState()).toBe("unmodified");
+    });
+
+    it("allows another attempt after a rejected prompt or a failed save", async () => {
+      const first = view.loadImageFromNavigation(copy);
+      replies[0].reject(new Error("Confirmation failed"));
+      expect(await first).toBe(false);
+
+      let finishSave;
+      const save = spyOn(view, "save").and.returnValue(
+        new Promise((resolve) => (finishSave = resolve)),
+      );
+      const second = view.loadImageFromNavigation(copy);
+      replies[1].resolve(0);
+      await conditionPromise(() => save.calls.count() === 1);
+      await view.loadImageFromNavigation(last);
+      expect(confirm).toHaveBeenCalledTimes(2);
+      finishSave(false);
+      expect(await second).toBe(false);
+      expect(image.getPath()).toBe(original);
+      expect(image.getFileState()).toBe("modified");
+
+      const third = view.loadImageFromNavigation(copy);
+      expect(confirm).toHaveBeenCalledTimes(3);
+      replies[2].resolve(1);
+      expect(await third).toBe(false);
+    });
+  });
+
   it("refreshes visible navigation headers when the directory policy changes", async () => {
     const service = provider([last, original, copy]);
     provide(service);
