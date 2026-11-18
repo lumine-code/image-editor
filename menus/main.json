@@ -13,6 +13,14 @@
             {
               "label": "Next Images in Visible Panes",
               "command": "image-editor:next-images-in-visible-panes"
+            },
+            {
+              "label": "First Images in Visible Panes",
+              "command": "image-editor:first-images-in-visible-panes"
+            },
+            {
+              "label": "Last Images in Visible Panes",
+              "command": "image-editor:last-images-in-visible-panes"
             }
           ]
         }

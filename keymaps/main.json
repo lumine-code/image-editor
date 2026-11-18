@@ -52,7 +52,9 @@
     "shift-pageup": "image-editor:previous-images-in-visible-panes",
     "shift-pagedown": "image-editor:next-images-in-visible-panes",
     "home": "image-editor:first-image",
-    "end": "image-editor:last-image"
+    "end": "image-editor:last-image",
+    "shift-home": "image-editor:first-images-in-visible-panes",
+    "shift-end": "image-editor:last-images-in-visible-panes"
   },
   ".image-editor .native-key-bindings": {
     "up": "native!",
@@ -96,6 +98,8 @@
     "shift-pageup": "native!",
     "shift-pagedown": "native!",
     "home": "native!",
-    "end": "native!"
+    "end": "native!",
+    "shift-home": "native!",
+    "shift-end": "native!"
   }
 }

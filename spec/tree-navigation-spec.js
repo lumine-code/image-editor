@@ -136,6 +136,8 @@ describe("image-editor tree directory navigation", () => {
   describe("navigation in visible panes", () => {
     const next = "image-editor:next-images-in-visible-panes";
     const previous = "image-editor:previous-images-in-visible-panes";
+    const goToFirst = "image-editor:first-images-in-visible-panes";
+    const goToLast = "image-editor:last-images-in-visible-panes";
 
     async function openInPane(file, pane) {
       const item = await lumine.workspace.open(file, { pane, activatePane: false });
@@ -171,7 +173,52 @@ describe("image-editor tree directory navigation", () => {
       expect(background.getPath()).toBe(hidden);
     });
 
-    it("runs the shifted page shortcuts only from the image surface", async () => {
+    it("jumps to the endpoints of each visible image's own folder", async () => {
+      const otherDirectory = path.join(directory, "other-folder");
+      fs.mkdirSync(otherDirectory);
+      const otherFirst = path.join(otherDirectory, "first.png");
+      const otherMiddle = path.join(otherDirectory, "middle.png");
+      const otherLast = path.join(otherDirectory, "last.png");
+      for (const file of [otherFirst, otherMiddle, otherLast]) fs.copyFileSync(original, file);
+      const orders = new Map([
+        [directory, [last, text, original, copy]],
+        [otherDirectory, [otherFirst, otherMiddle, otherLast]],
+      ]);
+      const service = provider([]);
+      service.listFiles.and.callFake(async (folder) => orders.get(folder) ?? []);
+      provide(service);
+
+      const left = lumine.workspace.paneForItem(image);
+      const background = await openInPane(hidden, left);
+      left.activateItem(image);
+      const other = await openInPane(otherMiddle, left.splitRight({ activate: false }));
+      const target = lumine.workspace.getElement();
+      await conditionPromise(
+        () => !view.refs.firstImageButton.disabled && !other.view.refs.firstImageButton.disabled,
+      );
+
+      expect(lumine.commands.canDispatch(target, goToFirst)).toBeTrue();
+      await lumine.commands.dispatch(target, goToFirst);
+      expect(image.getPath()).toBe(last);
+      expect(other.getPath()).toBe(otherFirst);
+      expect(background.getPath()).toBe(hidden);
+      await conditionPromise(
+        () => !view.refs.lastImageButton.disabled && !other.view.refs.lastImageButton.disabled,
+      );
+      expect(lumine.commands.canDispatch(target, goToFirst)).toBeFalse();
+
+      expect(lumine.commands.canDispatch(target, goToLast)).toBeTrue();
+      await lumine.commands.dispatch(target, goToLast);
+      expect(image.getPath()).toBe(copy);
+      expect(other.getPath()).toBe(otherLast);
+      expect(background.getPath()).toBe(hidden);
+      await conditionPromise(
+        () => !view.refs.firstImageButton.disabled && !other.view.refs.firstImageButton.disabled,
+      );
+      expect(lumine.commands.canDispatch(target, goToLast)).toBeFalse();
+    });
+
+    it("runs the shifted navigation shortcuts only from the image surface", async () => {
       provide(provider([last, original, copy]));
       const textPane = lumine.workspace.paneForItem(image).splitRight({ activate: false });
       const textEditor = await lumine.workspace.open(text, { pane: textPane });
@@ -183,7 +230,9 @@ describe("image-editor tree directory navigation", () => {
       };
       await conditionPromise(() => lumine.commands.canDispatch(view.element, next));
 
-      for (const key of ["PageUp", "PageDown"]) {
+      expect(lumine.commands.canDispatch(textEditor.getElement(), goToFirst)).toBeTrue();
+      expect(lumine.commands.canDispatch(textEditor.getElement(), goToLast)).toBeTrue();
+      for (const key of ["PageUp", "PageDown", "Home", "End"]) {
         expect(press(key, view.refs.imagePositionInput).defaultPrevented).toBeFalse();
         expect(press(key, textEditor.getElement()).defaultPrevented).toBeTrue();
       }
@@ -195,8 +244,16 @@ describe("image-editor tree directory navigation", () => {
       );
       view.lastNavigationTime = 0;
       expect(press("PageUp", view.element).defaultPrevented).toBeTrue();
-      await conditionPromise(() => image.getPath() === original);
-      expect(navigateVisibleImages).toHaveBeenCalledTimes(2);
+      await conditionPromise(
+        () => image.getPath() === original && lumine.commands.canDispatch(view.element, goToFirst),
+      );
+      expect(press("Home", view.element).defaultPrevented).toBeTrue();
+      await conditionPromise(
+        () => image.getPath() === last && lumine.commands.canDispatch(view.element, goToLast),
+      );
+      expect(press("End", view.element).defaultPrevented).toBeTrue();
+      await conditionPromise(() => image.getPath() === copy);
+      expect(navigateVisibleImages).toHaveBeenCalledTimes(4);
     });
 
     it("checks availability and steps only the pane shown in a temporary presentation", async () => {
