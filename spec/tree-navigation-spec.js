@@ -171,6 +171,34 @@ describe("image-editor tree directory navigation", () => {
       expect(background.getPath()).toBe(hidden);
     });
 
+    it("runs the shifted page shortcuts only from the image surface", async () => {
+      provide(provider([last, original, copy]));
+      const textPane = lumine.workspace.paneForItem(image).splitRight({ activate: false });
+      const textEditor = await lumine.workspace.open(text, { pane: textPane });
+      const navigateVisibleImages = spyOn(main, "navigateVisibleImages").and.callThrough();
+      const press = (key, target) => {
+        const event = lumine.keymaps.constructor.buildKeydownEvent(key, { target, shift: true });
+        lumine.keymaps.handleKeyboardEvent(event);
+        return event;
+      };
+      await conditionPromise(() => lumine.commands.canDispatch(view.element, next));
+
+      for (const key of ["PageUp", "PageDown"]) {
+        expect(press(key, view.refs.imagePositionInput).defaultPrevented).toBeFalse();
+        expect(press(key, textEditor.getElement()).defaultPrevented).toBeTrue();
+      }
+      expect(navigateVisibleImages).not.toHaveBeenCalled();
+
+      expect(press("PageDown", view.element).defaultPrevented).toBeTrue();
+      await conditionPromise(
+        () => image.getPath() === copy && lumine.commands.canDispatch(view.element, previous),
+      );
+      view.lastNavigationTime = 0;
+      expect(press("PageUp", view.element).defaultPrevented).toBeTrue();
+      await conditionPromise(() => image.getPath() === original);
+      expect(navigateVisibleImages).toHaveBeenCalledTimes(2);
+    });
+
     it("checks availability and steps only the pane shown in a temporary presentation", async () => {
       const cycle = lumine.config.get("image-editor.scrollCycle");
       lumine.config.set("image-editor.scrollCycle", false);

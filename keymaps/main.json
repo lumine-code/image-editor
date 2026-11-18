@@ -49,6 +49,8 @@
     "y": "image-editor:redo",
     "pageup": "image-editor:previous-image",
     "pagedown": "image-editor:next-image",
+    "shift-pageup": "image-editor:previous-images-in-visible-panes",
+    "shift-pagedown": "image-editor:next-images-in-visible-panes",
     "home": "image-editor:first-image",
     "end": "image-editor:last-image"
   },
@@ -91,6 +93,8 @@
     "y": "native!",
     "pageup": "native!",
     "pagedown": "native!",
+    "shift-pageup": "native!",
+    "shift-pagedown": "native!",
     "home": "native!",
     "end": "native!"
   }
