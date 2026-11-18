@@ -240,6 +240,44 @@ describe("native image pixels and ownership", () => {
     expect(pixels(copy.view).join()).toBe(before);
   });
 
+  it("joins the destination image without discarding its unsaved pixels or history", async () => {
+    const sourcePath = path.join(directory, "source.png");
+    const destinationPath = path.join(directory, "destination.png");
+    for (const [file, color] of [
+      [sourcePath, "red"],
+      [destinationPath, "blue"],
+    ])
+      fs.writeFileSync(file, Buffer.from(canvas(3, 2, color).toDataURL().split(",")[1], "base64"));
+
+    const source = await lumine.workspace.open(sourcePath);
+    const split = lumine.workspace.paneForItem(source).splitRight({ activate: false });
+    const destination = await lumine.workspace.open(destinationPath, { pane: split });
+    items.push(source, destination);
+    await wait(() => pixels(source.view) && pixels(destination.view));
+    const before = pixels(destination.view).join();
+    destination.view.invertColors();
+    await wait(() => {
+      const rendered = pixels(destination.view);
+      return rendered && rendered.join() !== before && destination.document.pixelBlob;
+    });
+    const edited = pixels(destination.view);
+    const entry = destination.document.historyManager.getCurrentState();
+    const fileStates = [];
+    const subscription = source.onDidChangeFileState((state) => fileStates.push(state));
+
+    try {
+      expect(await source.view.loadImageFromNavigation(destinationPath)).toBe(true);
+      await wait(() => pixels(source.view)?.join() === edited.join());
+      expect(source.document).toBe(destination.document);
+      expect(destination.getFileState()).toBe("modified");
+      expect(destination.document.historyManager.getCurrentState()).toBe(entry);
+      expect(destination.document.historyManager.canUndo()).toBe(true);
+      expect(fileStates).toEqual(["modified"]);
+    } finally {
+      subscription.dispose();
+    }
+  });
+
   it("cancels a copy waiting for an encode without adding a document owner", async () => {
     const original = await open(canvas(3, 2, "red"));
     holdEncodes(2);

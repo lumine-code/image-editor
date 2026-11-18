@@ -21,6 +21,8 @@ Opening another image in a pending tab reuses the image editor and its view. The
 
 Folder navigation uses the tree-view directory service, which follows its sorting and file visibility settings even with no project folder open. The service uses the default sorting when those settings are unavailable.
 
+Use **Previous Images in Visible Panes** or **Next Images in Visible Panes** under **Packages → Image Editor** to step through images side by side. Each visible pane in the current window follows its own folder order and the image cycling setting.
+
 Use Open… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
 
 ![Inspect a plotted waveform and its image metadata.](.github/demo.png)
@@ -30,6 +32,11 @@ Use Open… in the tree view to choose Image Editor for an SVG file; SVG files o
 To install `image-editor` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/image-editor`.
 
 ## Commands
+
+Commands available in `lumine-workspace`:
+
+- `image-editor:previous-images-in-visible-panes`: go to the previous image in each visible image pane,
+- `image-editor:next-images-in-visible-panes`: go to the next image in each visible image pane.
 
 Commands available in `.image-editor`:
 

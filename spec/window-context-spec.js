@@ -1,4 +1,5 @@
 const path = require("node:path");
+const { Disposable } = require("lumine");
 
 describe("image presentation windows", () => {
   let image;
@@ -172,6 +173,41 @@ describe("image presentation windows", () => {
       expect(showForItem.calls.mostRecent().args[0].element.ownerDocument).toBe(
         extra.getDocument(),
       );
+    } finally {
+      lease.dispose();
+    }
+  });
+
+  it("steps through the images in the command's own window", async () => {
+    const first = image.getPath();
+    const second = path.join(path.dirname(first), "other.png");
+    const main = lumine.packages.getActivePackage("image-editor").mainModule;
+    const lease = main.consumeTreeViewDirectory({
+      listFiles: async () => [first, second],
+      onDidChange: () => new Disposable(),
+      watchDirectory: () => new Disposable(),
+    });
+    lumine.config.set("image-editor.scrollCycle", true);
+    try {
+      const extra = await lumine.workspace.openEditorWindow({ show: false });
+      const extraImage = await lumine.workspace.open(second, {
+        pane: extra.getEditorContainer().getActivePane(),
+      });
+      await conditionPromise(
+        () =>
+          extraImage.view.loaded && extraImage.view.canStepImage(-1) && image.view.canStepImage(1),
+      );
+
+      await lumine.commands.dispatch(image.element, "image-editor:next-images-in-visible-panes");
+      expect(image.getPath()).toBe(second);
+      expect(extraImage.getPath()).toBe(second);
+
+      await lumine.commands.dispatch(
+        extraImage.element,
+        "image-editor:previous-images-in-visible-panes",
+      );
+      expect(extraImage.getPath()).toBe(first);
+      expect(image.getPath()).toBe(second);
     } finally {
       lease.dispose();
     }

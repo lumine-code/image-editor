@@ -133,6 +133,103 @@ describe("image-editor tree directory navigation", () => {
     expect((await view.getFileList()).files).not.toContain(hidden);
   });
 
+  describe("navigation in visible panes", () => {
+    const next = "image-editor:next-images-in-visible-panes";
+    const previous = "image-editor:previous-images-in-visible-panes";
+
+    async function openInPane(file, pane) {
+      const item = await lumine.workspace.open(file, { pane, activatePane: false });
+      await conditionPromise(() => item.view?.loaded && item.view.refs.image.complete);
+      return item;
+    }
+
+    it("steps each visible image in folder order while leaving background tabs alone", async () => {
+      provide(provider([last, original, copy, hidden]));
+      const left = lumine.workspace.paneForItem(image);
+      const background = await openInPane(hidden, left);
+      left.activateItem(image);
+      const right = left.splitRight({ activate: false });
+      const other = await openInPane(last, right);
+      const target = lumine.workspace.getElement();
+      await conditionPromise(() => lumine.commands.canDispatch(target, next));
+
+      await lumine.commands.dispatch(target, next);
+
+      expect(image.getPath()).toBe(copy);
+      expect(other.getPath()).toBe(original);
+      expect(background.getPath()).toBe(hidden);
+      expect(left.getActiveItem()).toBe(image);
+      expect(right.getActiveItem()).toBe(other);
+
+      view.lastNavigationTime = 0;
+      other.view.lastNavigationTime = 0;
+      await conditionPromise(() => lumine.commands.canDispatch(target, previous));
+      await lumine.commands.dispatch(target, previous);
+
+      expect(image.getPath()).toBe(original);
+      expect(other.getPath()).toBe(last);
+      expect(background.getPath()).toBe(hidden);
+    });
+
+    it("checks availability and steps only the pane shown in a temporary presentation", async () => {
+      const cycle = lumine.config.get("image-editor.scrollCycle");
+      lumine.config.set("image-editor.scrollCycle", false);
+      provide(provider([original, copy, last]));
+      const left = lumine.workspace.paneForItem(image);
+      const right = left.splitRight({ activate: false });
+      const other = await openInPane(copy, right);
+      const target = lumine.workspace.getElement();
+      await conditionPromise(() => lumine.commands.canDispatch(target, previous));
+      const presentation = left.getContainer().presentPane(left);
+
+      try {
+        expect(lumine.commands.canDispatch(target, previous)).toBeFalse();
+        expect(lumine.commands.canDispatch(target, next)).toBeTrue();
+        await lumine.commands.dispatch(target, next);
+
+        expect(image.getPath()).toBe(copy);
+        expect(other.getPath()).toBe(copy);
+      } finally {
+        presentation.dispose();
+        lumine.config.set("image-editor.scrollCycle", cycle);
+      }
+    });
+
+    it("waits for the save prompt and skips a pane hidden during that prompt", async () => {
+      provide(provider([original, copy, last]));
+      const left = lumine.workspace.paneForItem(image);
+      const other = await openInPane(copy, left.splitRight({ activate: false }));
+      const target = view.element;
+      let answer;
+      const reply = new Promise((resolve) => (answer = resolve));
+      const confirm = spyOn(
+        lumine.workspace.getWindowForElement(target),
+        "confirm",
+      ).and.returnValue(reply);
+      view.invertColors();
+      await conditionPromise(() => image.getFileState() === "modified");
+      await conditionPromise(() => lumine.commands.canDispatch(target, next));
+      const navigation = lumine.commands.dispatch(target, next);
+      let presentation;
+
+      try {
+        await conditionPromise(() => confirm.calls.any());
+        expect(other.getPath()).toBe(copy);
+        presentation = left.getContainer().presentPane(left);
+        answer(2);
+        await navigation;
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(image.getPath()).toBe(copy);
+        expect(other.getPath()).toBe(copy);
+      } finally {
+        answer(1);
+        presentation?.dispose();
+        await navigation;
+      }
+    });
+  });
+
   it("shows the same sequence in the picker, navigation headers and toolbar position", async () => {
     provide(provider([last, original, text, copy]));
 

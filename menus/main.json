@@ -1,4 +1,24 @@
 {
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "Image Editor",
+          "submenu": [
+            {
+              "label": "Previous Images in Visible Panes",
+              "command": "image-editor:previous-images-in-visible-panes"
+            },
+            {
+              "label": "Next Images in Visible Panes",
+              "command": "image-editor:next-images-in-visible-panes"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "context-menu": {
     ".image-editor": {
       "groupOrder": [
