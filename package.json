@@ -28,7 +28,8 @@
     "lib",
     "menus",
     "spec",
-    "styles"
+    "styles",
+    "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
     "test": "lumine --test spec",
@@ -55,7 +56,9 @@
     }
   },
   "dependencies": {
-    "@lumine-code/etch": "github:lumine-code/etch#dbf9084e0630ec126762b2cef4194452fda46037"
+    "@lumine-code/etch": "github:lumine-code/etch#dbf9084e0630ec126762b2cef4194452fda46037",
+    "@tesseract.js-data/osd": "1.0.0",
+    "tesseract.js": "7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

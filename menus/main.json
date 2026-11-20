@@ -7,6 +7,10 @@
           "label": "Image Editor",
           "submenu": [
             {
+              "label": "Auto-Rotate",
+              "command": "image-editor:auto-rotate"
+            },
+            {
               "label": "Previous Images in Visible Panes",
               "command": "image-editor:previous-images-in-visible-panes"
             },
@@ -92,6 +96,10 @@
         {
           "label": "Transform",
           "submenu": [
+            {
+              "label": "Auto-Rotate",
+              "command": "image-editor:auto-rotate"
+            },
             {
               "label": "Rotate 90° Clockwise",
               "command": "image-editor:rotate-90-cw"

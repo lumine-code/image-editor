@@ -8,7 +8,7 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 
 - **Zoom & pan**: zoom controls, keyboard shortcuts, and right-click drag to pan.
 - **Image browsing**: navigate between images in the same folder in tree-view order, respecting hidden files, or search their filenames in a picker.
-- **Transform tools**: rotate, flip, resize, and crop images.
+- **Transform tools**: rotate, flip, resize, and crop images. Auto-Rotate detects the direction of text locally and turns the image upright when the result is clear.
 - **Color adjustments**: brightness, contrast, saturation, hue, and auto-adjust.
 - **Filters**: blur, sharpen, grayscale, sepia, posterize, and invert.
 - **Selection tools**: create, resize, auto-select, crop, and extend the canvas to a selection.
@@ -58,6 +58,7 @@ Commands available in `.image-editor`:
 - `image-editor:next-image`: go to next image,
 - `image-editor:last-image`: go to last image in folder,
 - `image-editor:reload`: refresh image from disk,
+- `image-editor:auto-rotate`: rotate the current image using the detected direction of its text,
 - `image-editor:rotate-90-cw`: rotate 90° clockwise,
 - `image-editor:rotate-90-ccw`: rotate 90° counter-clockwise,
 - `image-editor:rotate-180`: rotate 180°,
