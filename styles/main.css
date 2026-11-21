@@ -140,6 +140,7 @@
     position: relative;
     cursor: default;
     background-color: var(--app-background-color);
+    anchor-scope: --image-editor-image;
 
     &.grabbing {
       cursor: grabbing;
@@ -148,12 +149,22 @@
     img {
       display: block;
       position: absolute;
+      anchor-name: --image-editor-image;
       transform-origin: 0 0;
       pointer-events: none;
       /* Let events pass through to container for panning */
       -webkit-user-drag: none;
       image-rendering: -webkit-optimize-contrast;
       backface-visibility: hidden;
+    }
+
+    .image-frame {
+      position: absolute;
+      position-anchor: --image-editor-image;
+      inset: anchor(top) anchor(right) anchor(bottom) anchor(left);
+      position-visibility: anchors-visible;
+      outline: 1px solid var(--base-border-color);
+      pointer-events: none;
     }
 
     .selection-box {

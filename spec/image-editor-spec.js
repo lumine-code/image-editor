@@ -123,6 +123,33 @@ describe("image-editor", () => {
     });
   });
 
+  it("keeps the one-pixel theme frame aligned with the panned and zoomed image", async () => {
+    const { view } = await lumine.workspace.open(samplePath);
+    const { image, imageContainer } = view.refs;
+    await pollUntil(() => view.loaded && image.complete && image.naturalWidth > 0);
+    view.element.style.setProperty("--base-border-color", "rgb(10, 20, 30)");
+    const frame = imageContainer.querySelector(".image-frame");
+    const style = getComputedStyle(frame);
+    expect(style.outlineColor).toBe("rgb(10, 20, 30)");
+    expect(style.pointerEvents).toBe("none");
+
+    for (const [zoom, x, y] of [
+      [0.75, 15, 20],
+      [2, 30, 45],
+    ]) {
+      view.zoom = zoom;
+      view.translateX = x;
+      view.translateY = y;
+      view.updateTransform({ immediate: true });
+      const imageBounds = image.getBoundingClientRect();
+      const frameBounds = frame.getBoundingClientRect();
+      for (const edge of ["top", "right", "bottom", "left"]) {
+        expect(frameBounds[edge]).toBeCloseTo(imageBounds[edge], 1);
+      }
+      expect(style.outlineWidth).toBe("1px");
+    }
+  });
+
   describe("status bar", () => {
     it("hides the whole tile while a non-text center item is active", async () => {
       const image = await lumine.workspace.open(samplePath);

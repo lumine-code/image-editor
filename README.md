@@ -25,7 +25,7 @@ Use the commands under **Packages → Image Editor** to step through images side
 
 Use Open… in the tree view to choose Image Editor for an SVG file; SVG files open in Text Editor by default.
 
-![Inspect a plotted waveform and its image metadata.](.github/demo.png)
+![Inspect a plotted waveform in the image editor.](.github/demo.png)
 
 ## Installation
 
