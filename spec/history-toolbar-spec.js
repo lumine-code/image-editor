@@ -36,9 +36,8 @@ describe("image history toolbar availability", () => {
 
   async function edit(view) {
     const previous = view.refs.image.src;
-    view.invertColors();
-    await conditionPromise(() => view.refs.image.src !== previous);
-    await ready(view);
+    await view.invertColors();
+    expect(view.refs.image.src).not.toBe(previous);
   }
 
   it("disables empty history while loading and after the view is destroyed", async () => {
@@ -68,29 +67,19 @@ describe("image history toolbar availability", () => {
     await edit(view);
     await edit(view);
     expectButtons(view, true, false);
-    const undoing = view.undo();
+    await view.undo();
     expectButtons(view, true, true);
-    await undoing;
-    await ready(view);
-    const undoingFirst = view.undo();
+    await view.undo();
     expectButtons(view, false, true);
-    await undoingFirst;
-    await ready(view);
-    const redoing = view.redo();
-    expectButtons(view, true, true);
-    await redoing;
-    await ready(view);
     await view.redo();
-    await ready(view);
+    expectButtons(view, true, true);
+    await view.redo();
     expectButtons(view, true, false);
     await view.undo();
-    await ready(view);
     await edit(view);
     expectButtons(view, true, false);
     await view.undo();
-    await ready(view);
     await view.undo();
-    await ready(view);
     expect(view.isModified()).toBe(false);
     expectButtons(view, false, true);
     view.historyManager.reset();
@@ -107,12 +96,10 @@ describe("image history toolbar availability", () => {
     items.push(copy);
     await ready(copy.view);
     expectButtons(copy.view, true, false);
-    const undoing = copy.view.undo();
+    await copy.view.undo();
+    await original.view.pixelSyncPromise;
     expectButtons(copy.view, true, true);
     expectButtons(original.view, true, true);
-    await undoing;
-    await ready(copy.view);
-    await original.view.pixelSyncPromise;
     spyOn(lumine.workspace.getWindowForElement(original.view.element), "confirm").and.resolveTo(2);
     expect(
       await original.view.loadImageFromNavigation(path.join(pack.path, "spec/fixtures/other.png")),

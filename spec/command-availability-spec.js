@@ -53,9 +53,9 @@ describe("image command availability", () => {
     const View = require("../lib/view");
     const view = Object.create(View.prototype);
     view.readOnly = true;
-    view.deferSharedPixelOperation = jasmine.createSpy("queue pixel operation");
+    view.runImageOperation = jasmine.createSpy("queue pixel operation");
     view.cropToSelection();
     view.resizeCanvasToSelection();
-    expect(view.deferSharedPixelOperation).not.toHaveBeenCalled();
+    expect(view.runImageOperation).not.toHaveBeenCalled();
   });
 });

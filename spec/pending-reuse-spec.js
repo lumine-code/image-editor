@@ -93,9 +93,10 @@ describe("image-editor pending reuse", () => {
   it("promotes the reused tab when the replacement image is edited", async () => {
     await lumine.workspace.open(otherPath, { pending: true });
     await pollUntil(() => view.refs.image.complete);
-    view.invertColors();
+    const edit = view.invertColors();
 
     expect(lumine.workspace.paneForItem(item).getPendingItem()).toBe(null);
+    await edit;
     expect(item.getFileState()).toBe("modified");
     const nextItem = await lumine.workspace.open(samplePath, { pending: true });
     expect(nextItem).not.toBe(item);
@@ -274,7 +275,7 @@ describe("image-editor pending reuse", () => {
     expect(onLoad).not.toHaveBeenCalled();
   });
 
-  it("discards a stale edit encode after ordinary navigation discards that document", async () => {
+  it("waits for a cancelled edit encode before replacing the image", async () => {
     const toBlob = HTMLCanvasElement.prototype.toBlob;
     const encodes = [];
     spyOn(HTMLCanvasElement.prototype, "toBlob").and.callFake(function (callback, ...args) {
@@ -292,18 +293,21 @@ describe("image-editor pending reuse", () => {
           }),
       );
     });
-    view.invertColors();
-    expect(view.historyManager.length).toBe(2);
-    spyOn(lumine.window, "confirm").and.returnValue(Promise.resolve(2));
-
-    await view.loadImageFromNavigation(otherPath);
-    const imageUrl = view.refs.image.src;
+    const editing = view.invertColors();
+    expect(encodes.length).toBe(2);
+    expect(view.historyManager.length).toBe(0);
+    const confirm = spyOn(lumine.window, "confirm");
+    const navigating = view.loadImageFromNavigation(otherPath);
+    expect(item.getPath()).toBe(samplePath);
+    expect(item.document.operationQueue.cancel()).toBe(true);
     await Promise.all(encodes.map((encode) => encode()));
+    await editing;
+    expect(await navigating).toBe(true);
 
     expect(item.getPath()).toBe(otherPath);
-    expect(view.refs.image.src).toBe(imageUrl);
     expect(view.historyManager.length).toBe(0);
     expect(item.getFileState()).toBe("unmodified");
+    expect(confirm).not.toHaveBeenCalled();
   });
 
   for (const [showDialog, applyMethod] of [
@@ -430,9 +434,10 @@ describe("image-editor pending reuse", () => {
     });
     const navigation = view.loadImageFromNavigation(otherPath, { pending: true });
     await pollUntil(() => entered);
-    view.invertColors();
+    const editing = view.invertColors();
     release();
     const result = await navigation;
+    await editing;
 
     expect(result).toBe(false);
     expect(item.getPath()).toBe(samplePath);

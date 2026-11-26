@@ -17,6 +17,8 @@ A feature-rich image viewer with support for cropping, rotation, color adjustmen
 - **Navigation panel**: browse folder images via [navigation-panel](https://github.com/lumine-code/navigation-panel).
 - **API for packages**: other packages can open images from data URLs without saving to disk. Used by [jupyter-repl](https://github.com/lumine-code/jupyter-repl) to display plot outputs.
 
+Image operations run in order for each image and share one queue across its open views. The badge next to the spinner shows how many operations are waiting. Hover over the spinner or focus it with the keyboard to reveal **Cancel**. It discards the current operation before its result is committed and clears all waiting operations. Use Undo for an edit that has already been committed.
+
 Opening another image in a pending tab reuses the image editor and its view. The next image is decoded before replacing the current document, and editing an image keeps its tab open. Folder navigation uses the same loading path and asks before discarding unsaved changes. The folder picker uses the selected file's default opener and also offers other opening actions.
 
 Folder navigation uses the tree-view directory service, which follows its sorting and file visibility settings even with no project folder open. The service uses the default sorting when those settings are unavailable.

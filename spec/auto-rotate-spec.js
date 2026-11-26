@@ -46,7 +46,7 @@ describe("image-editor auto-rotate command", () => {
   });
 
   it("leaves upright and uncertain images unchanged", async () => {
-    const rotate = spyOn(view, "rotate");
+    const rotate = spyOn(view, "rotateInOperation");
     const initialSource = image.src;
     const initialHistoryLength = view.historyManager.length;
 
@@ -65,23 +65,29 @@ describe("image-editor auto-rotate command", () => {
     expect(view.historyManager.length).toBe(initialHistoryLength);
   });
 
-  it("discards a detection result if the pixels have changed", async () => {
+  it("rotates before a flip dispatched during orientation detection", async () => {
     const detection = Promise.withResolvers();
     detector.and.returnValue(detection.promise);
-    const rotate = spyOn(view, "rotate");
     const initialSource = image.src;
 
     const rotation = lumine.commands.dispatch(image, command);
     await conditionPromise(() => detector.calls.any());
-    try {
-      await lumine.commands.dispatch(image, "image-editor:flip-horizontal");
-      await conditionPromise(() => image.src !== initialSource && image.complete);
-    } finally {
-      detection.resolve({ degrees: 90, confidence: 22 });
-      await rotation;
-    }
+    const flip = lumine.commands.dispatch(image, "image-editor:flip-horizontal");
+    expect(item.document.operationQueue.waiting).toEqual(["Flip Horizontally"]);
+    expect(image.src).toBe(initialSource);
+    detection.resolve({ degrees: 90, confidence: 22 });
+    await Promise.all([rotation, flip]);
 
-    expect(rotate).not.toHaveBeenCalled();
+    expect(image.naturalWidth).toBe(2);
+    expect(image.naturalHeight).toBe(3);
+    const canvas = document.createElement("canvas");
+    canvas.width = 2;
+    canvas.height = 3;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0);
+    expect(context.getImageData(0, 0, 1, 1).data[3]).toBe(255);
+    expect(context.getImageData(1, 0, 1, 1).data[3]).toBe(0);
+    expect(view.historyManager.length).toBe(3);
   });
 
   it("runs the local detector from the renderer", async () => {

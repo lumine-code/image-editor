@@ -562,7 +562,7 @@ describe("image-editor tree directory navigation", () => {
           view.historyManager.getCurrentState()?.settled &&
           view.refs.image.complete,
       );
-      await view.editor.document.pendingEdit?.promise;
+      await view.editor.document.operationQueue.whenIdle();
       await view.refreshImagePosition();
     });
 

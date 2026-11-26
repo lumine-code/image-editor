@@ -63,7 +63,7 @@ describe("image-editor folder list", () => {
   });
 
   it("confirms the current filename without discarding or reloading its edits", async () => {
-    view.invertColors();
+    await view.invertColors();
     expect(item.getFileState()).toBe("modified");
     const load = spyOn(view, "loadImageFromNavigation");
     const confirm = spyOn(lumine.window, "confirm");
@@ -107,7 +107,7 @@ describe("image-editor folder list", () => {
   });
 
   it("opens another image without asking to discard the source image's edits", async () => {
-    view.invertColors();
+    await view.invertColors();
     const editedState = view.historyManager.getCurrentState();
     spyOn(lumine.window, "confirm");
     const list = await showList();

@@ -44,6 +44,18 @@ describe("native image pixels and ownership", () => {
     const entry = pending[index];
     nativeEncode.call(entry.canvas, entry.callback, ...entry.args);
   }
+  function holdWrite(file) {
+    const writeFile = fs.promises.writeFile;
+    let releaseWrite;
+    spyOn(fs.promises, "writeFile").and.callFake(async (target, ...args) => {
+      if (target === file) await new Promise((resolve) => (releaseWrite = resolve));
+      return writeFile(target, ...args);
+    });
+    return async () => {
+      await wait(() => releaseWrite != null);
+      return releaseWrite;
+    };
+  }
   beforeEach(async () => {
     jasmine.useRealClock();
     for (const name of ["openPath", "openExternal", "openApplication", "showItemInFolder"])
@@ -202,7 +214,7 @@ describe("native image pixels and ownership", () => {
     const before = pixels(copy.view).join();
     holdEncodes(2);
     original.view.invertColors();
-    expect(pending.length).toBe(2);
+    await wait(() => pending.length === 2);
     original.destroy();
     release(0);
     release(1);
@@ -278,18 +290,26 @@ describe("native image pixels and ownership", () => {
     }
   });
 
-  it("cancels a copy waiting for an encode without adding a document owner", async () => {
+  it("cancels a copy waiting for a compact history encode without adding a document owner", async () => {
     const original = await open(canvas(3, 2, "red"));
-    holdEncodes(2);
-    original.view.invertColors();
+    original.view.historyManager.largeImagePixels = 1;
+    holdEncodes(3);
+    const editing = original.view.invertColors();
+    await wait(() => pending.length === 2);
+    release(0);
+    release(1);
+    await editing;
+    await wait(() => pending.length === 3);
+    const entry = original.document.historyManager.getCurrentState();
+    expect(entry.settled).toBe(false);
     const controller = new AbortController();
     const copying = original.copy({ signal: controller.signal });
     controller.abort();
     await expectAsync(copying).toBeRejected();
     expect(original.document.references).toBe(1);
-    release(0);
-    release(1);
-    await wait(() => original.document.historyManager.getCurrentState().settled);
+    release(2);
+    await entry.ready;
+    expect(entry.settled).toBe(true);
   });
 
   it("keeps a live dialog preview out of the shared committed pixels", async () => {
@@ -317,7 +337,8 @@ describe("native image pixels and ownership", () => {
     holdEncodes(2);
     original.view.invertColors();
     copy.view.invertColors();
-    expect(pending.length).toBe(2);
+    await wait(() => pending.length === 2);
+    expect(copy.document.operationQueue.waiting).toEqual(["Invert Colors"]);
     release(0);
     release(1);
     await wait(
@@ -349,6 +370,7 @@ describe("native image pixels and ownership", () => {
     holdEncodes();
     const saving = original.save();
     expect(copy.view.isSaving).toBe(true);
+    await wait(() => pending.length === 1);
     original.destroy();
     release(0);
     expect(await saving).toBe(true);
@@ -375,20 +397,23 @@ describe("native image pixels and ownership", () => {
     expect(fs.existsSync(file)).toBe(true);
   });
 
-  it("preserves a newer edit when the accepted older save finishes writing", async () => {
+  it("applies a queued edit only after the preceding save finishes writing", async () => {
     const file = path.join(directory, "saved.png");
     fs.writeFileSync(file, Buffer.from(canvas(2, 2, "red").toDataURL().split(",")[1], "base64"));
     const item = await lumine.workspace.open(file);
     items.push(item);
     await wait(() => item.view.loaded && item.view.refs.image.complete);
     const before = pixels(item.view).join();
-    holdEncodes();
+    const waitForWrite = holdWrite(file);
     const saving = item.save();
-    expect(pending.length).toBe(1);
-    item.view.invertColors();
-    await wait(() => pixels(item.view)?.join() !== before);
-    release(0);
+    const editing = item.view.invertColors();
+    const releaseWrite = await waitForWrite();
+    expect(item.document.operationQueue.waiting).toEqual(["Invert Colors"]);
+    expect(pixels(item.view).join()).toBe(before);
+    releaseWrite();
     expect(await saving).toBe(true);
+    await editing;
+    expect(pixels(item.view).join()).not.toBe(before);
     expect(item.getFileState()).toBe("modified");
     expect(item.view.historyManager.canUndo()).toBe(true);
     const saved = await open(canvas());
@@ -400,15 +425,15 @@ describe("native image pixels and ownership", () => {
     expect(item.getFileState()).toBe("unmodified");
   });
 
-  it("finishes the accepted Save As write without recreating a destroyed editor watcher", async () => {
+  it("finishes a committed Save As write without recreating a destroyed editor watcher", async () => {
     const item = await open(canvas(2, 2, "red"));
     const file = path.join(directory, "accepted.png");
     spyOn(lumine.window, "showSaveDialog").and.resolveTo({ canceled: false, filePath: file });
-    holdEncodes();
+    const waitForWrite = holdWrite(file);
     const saving = item.saveAs();
-    await wait(() => pending.length === 1);
+    const releaseWrite = await waitForWrite();
     item.destroy();
-    release(0);
+    releaseWrite();
     expect(await saving).toBe(true);
     expect(fs.existsSync(file)).toBe(true);
     expect(item.file).toBeNull();
@@ -424,14 +449,15 @@ describe("native image pixels and ownership", () => {
     const file = path.join(directory, "latest-accepted.png");
     const saving = item.saveAs();
     const before = pixels(item.view).join();
-    holdEncodes();
+    holdEncodes(2);
     item.view.invertColors();
-    expect(pending.length).toBe(1);
+    await wait(() => pending.length === 2);
     accept({ canceled: false, filePath: file });
     await new Promise((resolve) => requestAnimationFrame(resolve));
     expect(fs.existsSync(file)).toBe(false);
     expect(item.view.isSaving).toBe(true);
     release(0);
+    release(1);
     expect(await saving).toBe(true);
     const acceptedPixels = pixels(item.view).join();
     expect(acceptedPixels).not.toBe(before);
@@ -444,36 +470,44 @@ describe("native image pixels and ownership", () => {
     expect(pixels({ refs: { image: saved } }).join()).toBe(acceptedPixels);
   });
 
-  it("keeps the latest same-document pixels when native encodes settle in reverse order", async () => {
+  it("encodes and displays direct same-document edits in request order", async () => {
     const item = await open();
+    await item.view.commitCanvas(canvas(2, 2, "white"));
     holdEncodes(2);
-    item.view.commitCanvas(canvas(2, 2, "red"));
-    item.view.commitCanvas(canvas(2, 2, "blue"));
-    release(1);
-    await wait(() => pixels(item.view)?.[2] === 255 && pixels(item.view)?.[0] === 0);
-    const latest = pixels(item.view);
+    const first = item.view.commitCanvas(canvas(2, 2, "red"));
+    const second = item.view.commitCanvas(canvas(2, 2, "blue"));
+    await wait(() => pending.length >= 1);
+    expect(pending.length).toBe(1);
+    expect(item.document.operationQueue.waiting.length).toBe(1);
     release(0);
-    await wait(() => item.view.historyManager.history.every((entry) => entry.settled));
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    expect(pixels(item.view)).toEqual(latest);
+    await first;
+    expect(pixels(item.view).slice(0, 4)).toEqual([255, 0, 0, 255]);
+    await wait(() => pending.length === 2);
+    release(1);
+    await second;
+    expect(pixels(item.view).slice(0, 4)).toEqual([0, 0, 255, 255]);
   });
 
-  it("keeps a completed native Undo visible when the pending later encode settles", async () => {
+  it("undoes the preceding edit after its native encode completes", async () => {
     const item = await open();
-    item.view.ensureInitialHistorySaved();
-    item.view.commitCanvas(canvas(2, 2, "red"));
-    await wait(() => pixels(item.view)?.[0] === 255 && pixels(item.view)?.[2] === 0);
+    await item.view.commitCanvas(canvas(2, 2, "red"));
     const previous = pixels(item.view);
+    const previousEntry = item.view.historyManager.getCurrentState();
     holdEncodes();
-    item.view.commitCanvas(canvas(2, 2, "blue"));
-    const entry = item.view.historyManager.getCurrentState();
-    await item.view.undo();
-    await wait(() => pixels(item.view)?.join() === previous.join());
-    release(0);
-    await entry.ready;
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const editing = item.view.commitCanvas(canvas(2, 2, "blue"));
+    const undoing = item.view.undo();
+    await wait(() => pending.length === 1);
+    expect(item.document.operationQueue.waiting.length).toBe(1);
+    expect(item.view.historyManager.getCurrentState()).toBe(previousEntry);
     expect(pixels(item.view)).toEqual(previous);
-    expect(item.view.historyManager.getCurrentState()).not.toBe(entry);
+    release(0);
+    await editing;
+    await undoing;
+    expect(pixels(item.view)).toEqual(previous);
+    expect(item.view.historyManager.getCurrentState()).toBe(previousEntry);
+    expect(item.view.historyManager.canRedo()).toBe(true);
+    await item.view.redo();
+    expect(pixels(item.view).slice(0, 4)).toEqual([0, 0, 255, 255]);
   });
 
   it("releases the completed save flag after a live owned file-path replacement", async () => {
@@ -487,10 +521,11 @@ describe("native image pixels and ownership", () => {
     const item = await lumine.workspace.open(first);
     items.push(item);
     await wait(() => item.view.loaded && item.view.refs.image.complete);
-    holdEncodes();
+    const waitForWrite = holdWrite(first);
     const saving = item.save();
+    const releaseWrite = await waitForWrite();
     item.load(next);
-    release(0);
+    releaseWrite();
     expect(await saving).toBe(true);
     expect(item.getPath()).toBe(next);
     expect(item.view.isSaving).toBe(false);
