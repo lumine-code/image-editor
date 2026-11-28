@@ -89,6 +89,7 @@
     "a": "native!",
     "cmdorctrl-a": "native!",
     "q": "native!",
+    "shift-q": "native!",
     "w": "native!",
     "e": "native!",
     "z": "native!",

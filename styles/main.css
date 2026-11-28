@@ -58,6 +58,7 @@
 
     .zoom-to-fit-button {
       min-width: 5em;
+      justify-content: center;
 
       &[data-zoom-mode="fit-image"] {
         --zoom-mode-color: var(--ui-site-color-2);
@@ -81,13 +82,15 @@
       }
     }
 
-    .image-position-field {
+    .image-position-field,
+    .zoom-to-fit-button {
       display: flex;
       align-items: center;
       gap: 0.35em;
     }
 
-    .image-position-input {
+    .image-position-input,
+    .image-zoom-input {
       min-width: 2ch;
       padding: 0;
       border: none;
@@ -95,12 +98,18 @@
       background: transparent;
       font: inherit;
       text-align: center;
+    }
 
+    .image-position-input {
       &::-webkit-inner-spin-button,
       &::-webkit-outer-spin-button {
         appearance: none;
         margin: 0;
       }
+    }
+
+    .image-zoom-input {
+      width: 6.5ch;
     }
 
     .image-position-count {

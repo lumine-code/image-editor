@@ -36,6 +36,12 @@ describe("image toolbar context events", () => {
     return event;
   }
 
+  function zoomInputKey(input, key) {
+    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+    input.dispatchEvent(event);
+    return event;
+  }
+
   async function imageReady(width, height) {
     const image = item.view.refs.image;
     await conditionPromise(
@@ -140,6 +146,169 @@ describe("image toolbar context events", () => {
     expect(document.activeElement).toBe(button);
   });
 
+  it("selects the zoom percentage on left-click and commits typed percentages with Enter", async () => {
+    const view = item.view;
+    const { zoomToFitButton: field, zoomInput: input } = view.refs;
+    expect(input.getAttribute("aria-label")).toBe("Zoom percentage");
+    expect(input.getAttribute("aria-haspopup")).toBe("menu");
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+    expect(input.inputMode).toBe("decimal");
+    view.zoomToCenterPoint(1.23456);
+    await conditionPromise(() => input.value === "123%");
+    view.element.focus();
+    field.click();
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
+    expect(view.zoom).toBe(1.23456);
+
+    for (const key of ["0", "a", "left", "c", "shift-q"]) {
+      const event = lumine.keymaps.constructor.buildKeydownEvent(key, { target: input });
+      lumine.keymaps.handleKeyboardEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    }
+    expect(view.zoom).toBe(1.23456);
+    expect(zoomInputKey(input, "Enter").defaultPrevented).toBe(true);
+    expect(view.zoom).toBe(1.23456);
+    expect(document.activeElement).toBe(view.element);
+
+    for (const [entered, scale, displayed] of [
+      ["125", 1.25, "125%"],
+      ["87.5%", 0.875, "88%"],
+      ["123,4%", 1.234, "123%"],
+    ]) {
+      input.focus();
+      input.value = entered;
+      expect(zoomInputKey(input, "Enter").defaultPrevented).toBe(true);
+      expect(view.zoom).toBeCloseTo(scale, 10);
+      expect(view.auto).toBe(false);
+      expect(document.activeElement).toBe(view.element);
+      await conditionPromise(() => input.value === displayed);
+    }
+  });
+
+  it("cancels zoom edits on Escape or blur and rejects invalid percentages", async () => {
+    const view = item.view;
+    const input = view.refs.zoomInput;
+    view.zoomToCenterPoint(1.25);
+    await conditionPromise(() => input.value === "125%");
+    for (const entered of ["125% extra", "10001%", "0%", ""]) {
+      input.focus();
+      input.value = entered;
+      expect(zoomInputKey(input, "Enter").defaultPrevented).toBe(true);
+      expect(view.zoom).toBe(1.25);
+      expect(input.value).toBe("125%");
+      expect(document.activeElement).toBe(view.element);
+    }
+
+    input.focus();
+    input.value = "200";
+    expect(zoomInputKey(input, "Escape").defaultPrevented).toBe(true);
+    expect(input.value).toBe("125%");
+    expect(document.activeElement).toBe(view.element);
+
+    const outside = document.createElement("input");
+    jasmine.attachToDOM(outside);
+    input.focus();
+    input.value = "200";
+    view.zoomToCenterPoint(1.5);
+    await conditionPromise(() => view.renderedTransform?.zoom === 1.5);
+    expect(input.value).toBe("200");
+    outside.focus();
+    expect(view.zoom).toBe(1.5);
+    expect(input.value).toBe("150%");
+    expect(document.activeElement).toBe(outside);
+  });
+
+  it("leaves each adaptive mode at the exact zoom and position with an untouched percentage", async () => {
+    const view = item.view;
+    const { zoomToFitButton: field, zoomInput: input } = view.refs;
+    view.resizeImage(1001, 901);
+    await imageReady(1001, 901);
+    for (const mode of ["auto", "fit-image", "fit-width"]) {
+      lumine.commands.dispatch(view.element, "image-editor:set-zoom", { mode });
+      await conditionPromise(() => view.renderedTransform?.zoom === view.zoom);
+      expect(view.zoomMode).toBe(mode);
+      view.translateX -= 30.25;
+      view.translateY += 18.5;
+      view.updateTransform({ immediate: true });
+      const { zoom, translateX, translateY } = view;
+      expect(Number.parseFloat(input.value) / 100).not.toBeCloseTo(zoom, 10);
+
+      field.click();
+      expect(document.activeElement).toBe(input);
+      expect(zoomInputKey(input, "Enter").defaultPrevented).toBe(true);
+      expect(view.auto).toBe(false);
+      expect(view.zoomMode).toBeNull();
+      expect(view.zoom).toBe(zoom);
+      expect(view.translateX).toBe(translateX);
+      expect(view.translateY).toBe(translateY);
+      expect(document.activeElement).toBe(view.element);
+    }
+  });
+
+  it("centers the image when middle-click enables Auto and leaves active Auto alone", async () => {
+    const view = item.view;
+    const { zoomToFitButton: field, zoomInput: input, image, imageContainer } = view.refs;
+    const option = "image-editor.autoZoomLimit";
+    const previous = lumine.config.get(option);
+    lumine.config.set(option, true);
+    const middleClick = (target, type) => {
+      const options = { button: 1, bubbles: true, cancelable: true };
+      const down = new MouseEvent("mousedown", options);
+      target.dispatchEvent(down);
+      expect(down.defaultPrevented).toBe(true);
+      const click = new MouseEvent(type, options);
+      target.dispatchEvent(click);
+      expect(click.defaultPrevented).toBe(true);
+      expect(view.zoomMode).toBe("auto");
+      expect(view.zoom).toBe(1);
+      expect(document.activeElement).toBe(view.element);
+    };
+    const moveOffCenter = () => {
+      view.translateX -= 23.25;
+      view.translateY += 34.5;
+      view.updateTransform({ immediate: true });
+    };
+    const expectCentered = async () => {
+      const x = (imageContainer.offsetWidth - image.naturalWidth * view.zoom) / 2;
+      const y = (imageContainer.offsetHeight - image.naturalHeight * view.zoom) / 2;
+      expect(view.translateX).toBe(x);
+      expect(view.translateY).toBe(y);
+      await conditionPromise(
+        () =>
+          !view.smoothTransformRAF &&
+          input.value === "100%" &&
+          view.renderedTransform?.zoom === 1 &&
+          view.renderedTransform.translateX === x &&
+          view.renderedTransform.translateY === y,
+      );
+    };
+    try {
+      view.zoomToCenterPoint(1.5);
+      await conditionPromise(() => view.renderedTransform?.zoom === 1.5);
+      moveOffCenter();
+      middleClick(field, "auxclick");
+      await expectCentered();
+
+      view.zoomToCenterPoint(1);
+      moveOffCenter();
+      expect(view.auto).toBe(false);
+      input.focus();
+      middleClick(input, "click");
+      await expectCentered();
+
+      const center = spyOn(view, "centerImage").and.callThrough();
+      expect(view.auto).toBe(true);
+      middleClick(input, "auxclick");
+      expect(center).not.toHaveBeenCalled();
+      expect(view.smoothTransformRAF).toBeNull();
+      await expectCentered();
+    } finally {
+      lumine.config.set(option, previous);
+    }
+  });
+
   it("smoothly zooms around the view center with wheel and fractional trackpad deltas over the scale", async () => {
     const view = item.view;
     const button = view.refs.zoomToFitButton;
@@ -191,9 +360,9 @@ describe("image toolbar context events", () => {
           expect(document.activeElement).toBe(view.element);
         }
       }
-      button.focus();
-      wheel(button, 30);
-      expect(document.activeElement).toBe(button);
+      view.refs.zoomInput.focus();
+      wheel(view.refs.zoomInput, 30);
+      expect(document.activeElement).toBe(view.refs.zoomInput);
       expect(next).not.toHaveBeenCalled();
       expect(back).not.toHaveBeenCalled();
       expect(bubble).not.toHaveBeenCalled();
@@ -255,12 +424,13 @@ describe("image toolbar context events", () => {
 
   it("opens zoom presets through the shared menu and dispatches the selected scale", async () => {
     const view = item.view;
+    const input = view.refs.zoomInput;
     view.resetZoom();
     const showPopup = spyOn(lumine.menu, "showPopup").and.callThrough();
-    rightClick(view.refs.zoomToFitButton);
+    rightClick(input);
     const menu = view.zoomMenu;
     expect(menu).not.toBeNull();
-    expect(view.refs.zoomToFitButton.getAttribute("aria-expanded")).toBe("true");
+    expect(input.getAttribute("aria-expanded")).toBe("true");
     const rows = [...menu.element.querySelectorAll('[role="menuitemradio"]')];
     const labels = rows.map((row) => row.querySelector(".menu-item-name").textContent.trim());
     expect(labels).toEqual([
@@ -289,7 +459,7 @@ describe("image toolbar context events", () => {
     expect(view.zoom).toBe(1.5);
     expect(view.auto).toBe(false);
     expect(view.zoomMenu).toBeNull();
-    expect(view.refs.zoomToFitButton.getAttribute("aria-expanded")).toBe("false");
+    expect(input.getAttribute("aria-expanded")).toBe("false");
     expect(document.activeElement).toBe(view.element);
 
     rightClick(view.refs.zoomToFitButton);
@@ -303,13 +473,28 @@ describe("image toolbar context events", () => {
     expect(view.zoom).toBe(1);
     expect(view.auto).toBe(false);
 
-    view.refs.zoomToFitButton.focus();
-    view.refs.zoomToFitButton.dispatchEvent(
-      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F10", shiftKey: true }),
-    );
+    input.focus();
+    const openFromKeyboard = () =>
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          key: "F10",
+          shiftKey: true,
+        }),
+      );
+    openFromKeyboard();
     expect(view.zoomMenu).not.toBeNull();
     view.zoomMenu.close({ cancelled: true });
-    expect(document.activeElement).toBe(view.refs.zoomToFitButton);
+    expect(document.activeElement).toBe(input);
+
+    openFromKeyboard();
+    const keyboardMenu = view.zoomMenu;
+    [...keyboardMenu.element.querySelectorAll('[role="menuitemradio"]')]
+      .find((row) => row.querySelector(".menu-item-name").textContent.trim() === "125%")
+      .click();
+    await conditionPromise(() => keyboardMenu.closed && input.value === "125%");
+    expect(document.activeElement).toBe(input);
   });
 
   it("distinguishes capped auto zoom, whole-image fit, width fit and 100%", () => {
@@ -506,7 +691,7 @@ describe("image toolbar context events", () => {
 
     view.zoomToCenterPoint(1.23456);
     await conditionPromise(() => view.renderedTransform?.zoom === 1.23456);
-    expect(view.refs.zoomToFitButton.textContent).toBe("123%");
+    expect(view.refs.zoomInput.value).toBe("123%");
     expect(view.zoomController.getZoomPercentage()).toBe("123%");
     expect(view.zoom).toBe(1.23456);
   });

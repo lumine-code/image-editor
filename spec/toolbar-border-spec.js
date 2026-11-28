@@ -70,13 +70,14 @@ describe("image controls at the top pane boundary", () => {
     expect(getComputedStyle(group).backgroundColor).toBe("rgb(80, 90, 100)");
   });
 
-  it("uses the native button font for the current image, total and zoom label", () => {
+  it("uses the native button font for the image counter and zoom field", () => {
     const view = item.view;
     const elements = [
       view.refs.imagePosition,
       view.refs.imagePositionInput,
       view.refs.imagePositionCount,
       view.refs.zoomToFitButton,
+      view.refs.zoomInput,
     ];
     view.element.style.fontFamily = "var(--ui-font-family)";
     for (const [family, size, height] of [
