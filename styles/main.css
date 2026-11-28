@@ -197,6 +197,10 @@
       cursor: grabbing;
     }
 
+    &.middle-autopan {
+      cursor: all-scroll;
+    }
+
     img {
       display: block;
       position: absolute;

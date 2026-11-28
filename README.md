@@ -110,6 +110,8 @@ Commands available in `.image-editor-list`:
 - **Left-click drag**: create selection.
 - **Double left-click**: zoom to fit, or zoom to selection when double-clicking inside one.
 - **Right-click drag**: pan image.
+- **Middle click** toggles automatic panning. Move the pointer away from the click to pan, then click again or press `Esc` to stop.
+- **Middle-button drag** pans the image while the button is held.
 - **Mouse wheel**: navigate to previous/next image (or zoom if `switchZoomAndNavigation` is disabled).
 - **Ctrl + Mouse wheel**: zoom in/out at cursor position (or navigate if `switchZoomAndNavigation` is disabled).
 
